@@ -4,11 +4,8 @@ import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import clsx from "clsx";
 import { SubscriptionDTO } from "@/lib/client-types";
-import {
-  formatCurrency,
-  cadenceLabel,
-  relativeTime,
-} from "@/lib/format";
+import { cadenceLabel, relativeTime } from "@/lib/format";
+import { useMoney } from "./CurrencyContext";
 import PriceSparkline from "./PriceSparkline";
 
 interface Props {
@@ -21,6 +18,7 @@ const SubscriptionCard = forwardRef<HTMLDivElement, Props>(function Subscription
   { sub, onCancel, canceling },
   ref
 ) {
+  const money = useMoney();
   const topHike = sub.priceHikes[sub.priceHikes.length - 1];
 
   return (
@@ -51,11 +49,11 @@ const SubscriptionCard = forwardRef<HTMLDivElement, Props>(function Subscription
       <div className="mt-4 flex items-end justify-between">
         <div>
           <p className="text-2xl font-semibold tabular-nums text-white">
-            {formatCurrency(sub.avgAmount)}
+            {money(sub.avgAmount)}
           </p>
           <p className="text-xs text-white/40">
-            {formatCurrency(sub.monthlyCost)}/mo ·{" "}
-            {formatCurrency(sub.annualCost, { cents: false })}/yr
+            {money(sub.monthlyCost)}/mo ·{" "}
+            {money(sub.annualCost, { cents: false })}/yr
           </p>
         </div>
         <div className="text-right">

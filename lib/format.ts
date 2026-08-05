@@ -1,7 +1,29 @@
-export function formatCurrency(n: number, opts: { cents?: boolean } = {}): string {
-  return new Intl.NumberFormat("en-US", {
+export type CurrencyCode = "USD" | "EUR" | "GBP" | "NGN";
+
+export interface CurrencyMeta {
+  code: CurrencyCode;
+  symbol: string;
+  label: string;
+  locale: string;
+}
+
+/** Supported display currencies. Locale drives the correct symbol + grouping. */
+export const CURRENCIES: Record<CurrencyCode, CurrencyMeta> = {
+  USD: { code: "USD", symbol: "$", label: "US Dollar", locale: "en-US" },
+  EUR: { code: "EUR", symbol: "€", label: "Euro", locale: "en-IE" },
+  GBP: { code: "GBP", symbol: "£", label: "British Pound", locale: "en-GB" },
+  NGN: { code: "NGN", symbol: "₦", label: "Nigerian Naira", locale: "en-NG" },
+};
+
+export function formatCurrency(
+  n: number,
+  currency: CurrencyCode = "USD",
+  opts: { cents?: boolean } = {}
+): string {
+  const meta = CURRENCIES[currency] ?? CURRENCIES.USD;
+  return new Intl.NumberFormat(meta.locale, {
     style: "currency",
-    currency: "USD",
+    currency: meta.code,
     minimumFractionDigits: opts.cents === false ? 0 : 2,
     maximumFractionDigits: opts.cents === false ? 0 : 2,
   }).format(n);

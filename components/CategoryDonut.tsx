@@ -2,7 +2,7 @@
 
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { Summary } from "@/lib/client-types";
-import { formatCurrency } from "@/lib/format";
+import { useMoney } from "./CurrencyContext";
 
 const COLORS = [
   "#8b5cf6",
@@ -16,6 +16,7 @@ const COLORS = [
 ];
 
 export default function CategoryDonut({ summary }: { summary: Summary }) {
+  const money = useMoney();
   const data = summary.byCategory;
   const total = data.reduce((s, d) => s + d.total, 0);
 
@@ -48,14 +49,14 @@ export default function CategoryDonut({ summary }: { summary: Summary }) {
                   borderRadius: 12,
                   color: "#fff",
                 }}
-                formatter={(v: number) => [formatCurrency(v) + "/mo", "Spend"]}
+                formatter={(v: number) => [money(v) + "/mo", "Spend"]}
               />
             </PieChart>
           </ResponsiveContainer>
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-xs text-white/40">per month</span>
             <span className="text-xl font-semibold text-white">
-              {formatCurrency(total, { cents: false })}
+              {money(total, { cents: false })}
             </span>
           </div>
         </div>
@@ -68,7 +69,7 @@ export default function CategoryDonut({ summary }: { summary: Summary }) {
               />
               <span className="text-white/70">{d.category}</span>
               <span className="ml-auto tabular-nums text-white/50">
-                {formatCurrency(d.total)}
+                {money(d.total)}
               </span>
             </li>
           ))}

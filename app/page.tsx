@@ -1,5 +1,10 @@
 import DashboardClient from "@/components/DashboardClient";
+import { CurrencyProvider } from "@/components/CurrencyContext";
 
 export default function Page() {
-  return <DashboardClient />;
+  return (
+    <CurrencyProvider>
+      <DashboardClient />
+    </CurrencyProvider>
+  );
 }

@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import clsx from "clsx";
 import CountUp from "./CountUp";
 import { Summary } from "@/lib/client-types";
-import { formatCurrency } from "@/lib/format";
+import { useMoney } from "./CurrencyContext";
 
 interface Stat {
   label: string;
@@ -16,12 +16,13 @@ interface Stat {
 }
 
 export default function HeroSummary({ summary }: { summary: Summary }) {
+  const money = useMoney();
   const stats: Stat[] = [
     {
       label: "Monthly spend",
       value: summary.monthlyTotal,
-      format: (n) => formatCurrency(n),
-      sub: `${formatCurrency(summary.annualTotal, { cents: false })} / year`,
+      format: (n) => money(n),
+      sub: `${money(summary.annualTotal, { cents: false })} / year`,
     },
     {
       label: "Active subscriptions",
@@ -32,8 +33,8 @@ export default function HeroSummary({ summary }: { summary: Summary }) {
     {
       label: "Wasted on zombies",
       value: summary.zombieMonthlyWaste,
-      format: (n) => formatCurrency(n),
-      sub: `${summary.zombieCount} forgotten · ${formatCurrency(
+      format: (n) => money(n),
+      sub: `${summary.zombieCount} forgotten · ${money(
         summary.zombieAnnualWaste,
         { cents: false }
       )}/yr`,

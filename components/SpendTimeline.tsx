@@ -9,9 +9,11 @@ import {
   YAxis,
 } from "recharts";
 import { Summary } from "@/lib/client-types";
-import { formatCurrency, formatMonth } from "@/lib/format";
+import { formatMonth } from "@/lib/format";
+import { useMoney } from "./CurrencyContext";
 
 export default function SpendTimeline({ summary }: { summary: Summary }) {
+  const money = useMoney();
   const data = summary.timeline.map((t) => ({
     month: formatMonth(t.month),
     total: t.total,
@@ -46,7 +48,7 @@ export default function SpendTimeline({ summary }: { summary: Summary }) {
               axisLine={false}
               tickLine={false}
               width={48}
-              tickFormatter={(v) => formatCurrency(v, { cents: false })}
+              tickFormatter={(v) => money(v, { cents: false })}
             />
             <Tooltip
               cursor={{ stroke: "rgba(255,255,255,0.15)" }}
@@ -56,7 +58,7 @@ export default function SpendTimeline({ summary }: { summary: Summary }) {
                 borderRadius: 12,
                 color: "#fff",
               }}
-              formatter={(v: number) => [formatCurrency(v), "Spend"]}
+              formatter={(v: number) => [money(v), "Spend"]}
             />
             <Area
               type="monotone"

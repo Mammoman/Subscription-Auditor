@@ -3,7 +3,8 @@
 import { motion } from "framer-motion";
 import clsx from "clsx";
 import { Summary } from "@/lib/client-types";
-import { formatCurrency, formatDate, cadenceLabel } from "@/lib/format";
+import { formatDate, cadenceLabel } from "@/lib/format";
+import { useMoney } from "./CurrencyContext";
 
 function daysUntil(iso: string): number {
   return Math.max(
@@ -13,6 +14,7 @@ function daysUntil(iso: string): number {
 }
 
 export default function UpcomingRenewals({ summary }: { summary: Summary }) {
+  const money = useMoney();
   const items = summary.upcoming;
 
   return (
@@ -58,7 +60,7 @@ export default function UpcomingRenewals({ summary }: { summary: Summary }) {
                   {cadenceLabel(item.cadence)}
                 </p>
                 <p className="mt-2 text-lg font-semibold tabular-nums text-white">
-                  {formatCurrency(item.amount)}
+                  {money(item.amount)}
                 </p>
                 <p className="text-xs text-white/40">{formatDate(item.date)}</p>
               </motion.div>

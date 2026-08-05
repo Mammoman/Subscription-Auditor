@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Summary, SubscriptionDTO } from "@/lib/client-types";
-import { formatCurrency } from "@/lib/format";
+import { useMoney } from "./CurrencyContext";
+import CurrencySelector from "./CurrencySelector";
 import HeroSummary from "./HeroSummary";
 import SpendTimeline from "./SpendTimeline";
 import CategoryDonut from "./CategoryDonut";
@@ -13,6 +14,7 @@ import ImportPanel from "./ImportPanel";
 import ToastStack, { ToastMessage } from "./Toast";
 
 export default function DashboardClient() {
+  const money = useMoney();
   const [summary, setSummary] = useState<Summary | null>(null);
   const [subscriptions, setSubscriptions] = useState<SubscriptionDTO[]>([]);
   const [loading, setLoading] = useState(true);
@@ -112,7 +114,7 @@ export default function DashboardClient() {
         body: JSON.stringify({ merchant: sub.merchant }),
       });
       toast(
-        `Cancelled ${sub.merchant} · saving ${formatCurrency(sub.annualCost, {
+        `Cancelled ${sub.merchant} · saving ${money(sub.annualCost, {
           cents: false,
         })}/yr`,
         "success"
@@ -145,7 +147,8 @@ export default function DashboardClient() {
             hikes.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <CurrencySelector />
           <button
             onClick={loadDemo}
             disabled={busy !== null}
