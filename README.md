@@ -52,6 +52,48 @@ date,description,amount
 | `scoreZombie` | score dormancy × cost into a 0–100 "forgotten?" signal |
 | `buildSubscriptions` | orchestrate the above into `Subscription` objects |
 
+## Deploying to Vercel + Turso
+
+Locally the app uses a SQLite file and needs no configuration. For production on
+Vercel (whose filesystem is read-only), it connects to a **Turso** cloud
+database (SQLite-compatible) via the libSQL driver adapter. No code changes are
+needed to switch — it's driven entirely by two environment variables.
+
+**1. Create the Turso database** (free tier; no credit card):
+
+```bash
+# install the Turso CLI first: https://docs.turso.tech/cli
+turso auth signup
+turso db create subscription-auditor
+turso db show subscription-auditor --url         # -> TURSO_DATABASE_URL
+turso db tokens create subscription-auditor      # -> TURSO_AUTH_TOKEN
+```
+
+**2. Apply the schema** to the Turso database (creates the `Transaction` table):
+
+```bash
+turso db shell subscription-auditor < schema.sql
+```
+
+**3. Push to GitHub and import into Vercel** (Add New → Project → import this
+repo). Vercel auto-detects Next.js.
+
+**4. Set the environment variables** in Vercel → Settings → Environment
+Variables (see `.env.example`):
+
+```
+TURSO_DATABASE_URL = libsql://subscription-auditor-<you>.turso.io
+TURSO_AUTH_TOKEN   = <token from step 1>
+```
+
+**5. Deploy.** Once the vars are set, "Load demo data", CSV import, and cancel
+all work in production — writing to Turso instead of a local file. Every future
+`git push` auto-deploys.
+
+> How it works: `lib/db.ts` uses the Turso libSQL adapter when
+> `TURSO_DATABASE_URL` is present, and falls back to the local `dev.db` file
+> otherwise — so your IDE workflow is unchanged and needs no env vars.
+
 ## Tests
 
 ```bash
