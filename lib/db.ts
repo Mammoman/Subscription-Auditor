@@ -1,31 +1,19 @@
 import { PrismaClient } from "@prisma/client";
-import { PrismaLibSQL } from "@prisma/adapter-libsql";
-import { createClient } from "@libsql/client";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
 /**
- * Build a Prisma client. When TURSO_DATABASE_URL is set (production / Vercel),
- * connect to the Turso cloud database via the libSQL driver adapter. Otherwise
- * fall back to the local SQLite file (file:./dev.db) for local development — so
- * the IDE workflow is unchanged and needs no env vars.
+ * Prisma client singleton. Connects to the Postgres database given by the
+ * DATABASE_URL environment variable (Vercel Postgres in production; the same
+ * connection string in a local .env for development).
  */
-function createPrismaClient(): PrismaClient {
-  const url = process.env.TURSO_DATABASE_URL;
-  const authToken = process.env.TURSO_AUTH_TOKEN;
-
-  if (url) {
-    const libsql = createClient({ url, authToken });
-    const adapter = new PrismaLibSQL(libsql);
-    return new PrismaClient({ adapter });
-  }
-
-  return new PrismaClient();
-}
-
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+export const prisma =
+  globalForPrisma.prisma ??
+  new PrismaClient({
+    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+  });
 
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;
