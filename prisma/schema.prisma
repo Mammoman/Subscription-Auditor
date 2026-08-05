@@ -1,0 +1,21 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Transaction {
+  id                 String   @id @default(cuid())
+  date               DateTime
+  merchantRaw        String
+  merchantNormalized String
+  amount             Float
+  category           String?
+  status             String   @default("active") // active | cancelled (local-only)
+  createdAt          DateTime @default(now())
+
+  @@index([merchantNormalized])
+}
