@@ -1,5 +1,6 @@
 "use client";
 
+import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import clsx from "clsx";
 import { SubscriptionDTO } from "@/lib/client-types";
@@ -10,19 +11,21 @@ import {
 } from "@/lib/format";
 import PriceSparkline from "./PriceSparkline";
 
-export default function SubscriptionCard({
-  sub,
-  onCancel,
-  canceling,
-}: {
+interface Props {
   sub: SubscriptionDTO;
   onCancel: (sub: SubscriptionDTO) => void;
   canceling: boolean;
-}) {
+}
+
+const SubscriptionCard = forwardRef<HTMLDivElement, Props>(function SubscriptionCard(
+  { sub, onCancel, canceling },
+  ref
+) {
   const topHike = sub.priceHikes[sub.priceHikes.length - 1];
 
   return (
     <motion.div
+      ref={ref}
       layout
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
@@ -90,4 +93,6 @@ export default function SubscriptionCard({
       </div>
     </motion.div>
   );
-}
+});
+
+export default SubscriptionCard;
