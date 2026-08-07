@@ -5,9 +5,11 @@ import clsx from "clsx";
 
 export default function ImportPanel({
   onImportCsv,
+  onImportPdf,
   busy,
 }: {
   onImportCsv: (csv: string) => void;
+  onImportPdf: (file: File) => void;
   busy: boolean;
 }) {
   const [dragging, setDragging] = useState(false);
@@ -15,8 +17,15 @@ export default function ImportPanel({
 
   async function handleFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
-    const text = await files[0].text();
-    onImportCsv(text);
+    const file = files[0];
+    const isPdf =
+      file.type === "application/pdf" ||
+      file.name.toLowerCase().endsWith(".pdf");
+    if (isPdf) {
+      onImportPdf(file);
+    } else {
+      onImportCsv(await file.text());
+    }
   }
 
   return (
@@ -42,15 +51,15 @@ export default function ImportPanel({
       <input
         ref={inputRef}
         type="file"
-        accept=".csv,text/csv"
+        accept=".csv,text/csv,.pdf,application/pdf"
         className="hidden"
         onChange={(e) => handleFiles(e.target.files)}
       />
       <p className="text-sm font-medium text-fg/80">
-        {busy ? "Importing…" : "Drop a bank CSV or click to upload"}
+        {busy ? "Importing…" : "Drop a bank CSV or PDF statement, or click to upload"}
       </p>
       <p className="mt-1 text-xs text-fg/40">
-        columns: date, description, amount
+        CSV columns: date, description, amount · PDF parsing is best-effort
       </p>
     </div>
   );

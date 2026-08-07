@@ -44,6 +44,11 @@ date,description,amount
 - `amount` — positive = a charge. Negative values (refunds/credits) and
   unparseable rows are skipped and reported.
 
+**PDF statements** are also supported (best-effort): drop a PDF and the app
+extracts text and heuristically finds date + amount lines. Because statement
+layouts vary, results aren't guaranteed — a CSV export is the reliable path.
+Always check the "imported / skipped" summary after a PDF import.
+
 ## How detection works
 
 `lib/engine/` is a pure, framework-free, unit-tested module:

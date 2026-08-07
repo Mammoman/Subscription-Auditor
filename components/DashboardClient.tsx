@@ -118,6 +118,32 @@ export default function DashboardClient() {
     }
   }
 
+  async function importPdf(file: File) {
+    setBusy("import");
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/import-pdf", { method: "POST", body: fd });
+      if (!res.ok) throw new Error("pdf failed");
+      const { imported, skipped } = await res.json();
+      if (imported === 0) {
+        toast("No transactions found in that PDF", "danger");
+      } else {
+        toast(
+          `Imported ${imported} charges from PDF${
+            skipped?.length ? `, skipped ${skipped.length}` : ""
+          }`,
+          "success"
+        );
+      }
+      await refresh();
+    } catch {
+      toast("PDF import failed — try a CSV export instead", "danger");
+    } finally {
+      setBusy(null);
+    }
+  }
+
   async function cancelSub(sub: SubscriptionDTO) {
     setCancelingMerchant(sub.merchant);
     // optimistic removal
@@ -190,6 +216,7 @@ export default function DashboardClient() {
         <EmptyState
           onLoadDemo={loadDemo}
           onImportCsv={importCsv}
+          onImportPdf={importPdf}
           busy={busy}
           extra={monoButton}
         />
@@ -221,7 +248,11 @@ export default function DashboardClient() {
               </h2>
               {monoButton}
             </div>
-            <ImportPanel onImportCsv={importCsv} busy={busy === "import"} />
+            <ImportPanel
+              onImportCsv={importCsv}
+              onImportPdf={importPdf}
+              busy={busy === "import"}
+            />
           </div>
         </div>
       )}
@@ -232,11 +263,13 @@ export default function DashboardClient() {
 function EmptyState({
   onLoadDemo,
   onImportCsv,
+  onImportPdf,
   busy,
   extra,
 }: {
   onLoadDemo: () => void;
   onImportCsv: (csv: string) => void;
+  onImportPdf: (file: File) => void;
   busy: string | null;
   extra?: React.ReactNode;
 }) {
@@ -265,7 +298,11 @@ function EmptyState({
         {busy === "seed" ? "Loading…" : "Load demo data"}
       </button>
       <div className="mt-6">
-        <ImportPanel onImportCsv={onImportCsv} busy={busy === "import"} />
+        <ImportPanel
+          onImportCsv={onImportCsv}
+          onImportPdf={onImportPdf}
+          busy={busy === "import"}
+        />
       </div>
       {extra && <div className="mt-4 flex justify-center">{extra}</div>}
     </motion.div>
