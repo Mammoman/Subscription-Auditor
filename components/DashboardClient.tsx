@@ -56,7 +56,9 @@ export default function DashboardClient() {
     refresh();
   }, [refresh]);
 
-  const hasData = subscriptions.length > 0;
+  const hasSubs = subscriptions.length > 0;
+  const txnCount = summary?.transactionCount ?? 0;
+  const hasData = hasSubs || txnCount > 0;
 
   const monoButton = MONO_ENABLED ? (
     <MonoConnectButton
@@ -222,24 +224,33 @@ export default function DashboardClient() {
         />
       ) : (
         <div className="space-y-6">
-          {summary && <HeroSummary summary={summary} />}
+          {hasSubs ? (
+            <>
+              {summary && <HeroSummary summary={summary} />}
 
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
-            <div className="lg:col-span-3">
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
+                <div className="lg:col-span-3">
+                  {summary && <SpendTimeline summary={summary} />}
+                </div>
+                <div className="lg:col-span-2">
+                  {summary && <CategoryDonut summary={summary} />}
+                </div>
+              </div>
+
+              {summary && <UpcomingRenewals summary={summary} />}
+
+              <SubscriptionList
+                subscriptions={subscriptions}
+                onCancel={cancelSub}
+                cancelingMerchant={cancelingMerchant}
+              />
+            </>
+          ) : (
+            <>
+              <NoSubscriptionsNotice count={txnCount} />
               {summary && <SpendTimeline summary={summary} />}
-            </div>
-            <div className="lg:col-span-2">
-              {summary && <CategoryDonut summary={summary} />}
-            </div>
-          </div>
-
-          {summary && <UpcomingRenewals summary={summary} />}
-
-          <SubscriptionList
-            subscriptions={subscriptions}
-            onCancel={cancelSub}
-            cancelingMerchant={cancelingMerchant}
-          />
+            </>
+          )}
 
           <div className="glass rounded-2xl p-5">
             <div className="mb-3 flex items-center justify-between gap-3">
@@ -257,6 +268,36 @@ export default function DashboardClient() {
         </div>
       )}
     </main>
+  );
+}
+
+function NoSubscriptionsNotice({ count }: { count: number }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="glass rounded-2xl p-6"
+    >
+      <div className="flex items-start gap-4">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-grad text-xl shadow-glow">
+          ✓
+        </div>
+        <div>
+          <h2 className="text-lg font-semibold text-fg">
+            Imported {count} transaction{count === 1 ? "" : "s"} — but no
+            recurring subscriptions yet
+          </h2>
+          <p className="mt-1 text-sm text-fg/50">
+            A charge only counts as a subscription once the same merchant appears{" "}
+            <strong className="text-fg/80">at least 3 times</strong>. Your spend
+            is shown below — import a longer statement (more months of history)
+            so repeat charges can be detected, or{" "}
+            <span className="text-fg/80">Load demo data</span> to see the full
+            experience.
+          </p>
+        </div>
+      </div>
+    </motion.div>
   );
 }
 

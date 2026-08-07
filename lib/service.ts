@@ -13,6 +13,7 @@ export interface Summary {
   monthlyTotal: number;
   annualTotal: number;
   activeCount: number;
+  transactionCount: number;
   zombieCount: number;
   zombieMonthlyWaste: number;
   zombieAnnualWaste: number;
@@ -94,6 +95,7 @@ export async function getSummary(now: Date = new Date()): Promise<Summary> {
     monthlyTotal: round2(monthlyTotal),
     annualTotal: round2(monthlyTotal * 12),
     activeCount: activeSubs.length,
+    transactionCount: txns.length,
     zombieCount: zombies.length,
     zombieMonthlyWaste: round2(zombieMonthlyWaste),
     zombieAnnualWaste: round2(zombieMonthlyWaste * 12),
