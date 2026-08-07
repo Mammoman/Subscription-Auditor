@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Summary, SubscriptionDTO } from "@/lib/client-types";
 import { useMoney } from "./CurrencyContext";
 import CurrencySelector from "./CurrencySelector";
+import ThemeToggle from "./ThemeToggle";
 import HeroSummary from "./HeroSummary";
 import SpendTimeline from "./SpendTimeline";
 import CategoryDonut from "./CategoryDonut";
@@ -135,19 +136,20 @@ export default function DashboardClient() {
       {/* Header */}
       <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/60">
+          <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-fg/10 bg-fg/5 px-3 py-1 text-xs text-fg/60">
             <span className="h-1.5 w-1.5 rounded-full bg-good" />
             Kill your zombie subscriptions
           </div>
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
             <span className="text-gradient">Subscription Auditor</span>
           </h1>
-          <p className="mt-1 text-sm text-white/50">
+          <p className="mt-1 text-sm text-fg/50">
             Detect recurring charges, forgotten subscriptions, and sneaky price
             hikes.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <ThemeToggle />
           <CurrencySelector />
           <button
             onClick={loadDemo}
@@ -160,7 +162,7 @@ export default function DashboardClient() {
             <button
               onClick={clearData}
               disabled={busy !== null}
-              className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white/70 transition hover:bg-white/10 disabled:opacity-50"
+              className="rounded-xl border border-fg/10 bg-fg/5 px-4 py-2 text-sm font-medium text-fg/70 transition hover:bg-fg/10 disabled:opacity-50"
             >
               Clear
             </button>
@@ -194,7 +196,7 @@ export default function DashboardClient() {
           />
 
           <div className="glass rounded-2xl p-5">
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-white/60">
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-fg/60">
               Add your own data
             </h2>
             <ImportPanel onImportCsv={importCsv} busy={busy === "import"} />
@@ -223,10 +225,10 @@ function EmptyState({
       <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-grad text-3xl shadow-glow">
         👻
       </div>
-      <h2 className="text-2xl font-semibold text-white">
+      <h2 className="text-2xl font-semibold text-fg">
         Find your zombie subscriptions
       </h2>
-      <p className="mx-auto mt-2 max-w-md text-sm text-white/50">
+      <p className="mx-auto mt-2 max-w-md text-sm text-fg/50">
         Load a realistic demo dataset to see the auditor detect recurring
         charges, forgotten subscriptions, and price hikes — or upload your own
         bank CSV.

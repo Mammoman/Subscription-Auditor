@@ -2,8 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ---- Theme tokens -------------------------------------------------------- */
+/* Light is the default (:root); .dark overrides. --fg is consumed by the
+   Tailwind `fg` color (rgb(var(--fg) / alpha)) so every neutral text/surface/
+   border adapts automatically. */
 :root {
-  color-scheme: dark;
+  --fg: 17 24 39; /* slate-900-ish */
+  --page: 245 246 250;
+  --glass-bg: 255 255 255;
+  --glass-bg-alpha: 0.7;
+  --glass-border-alpha: 0.1;
+  --backdrop-opacity: 0.55;
+  --grad-a: #6d28d9;
+  --grad-b: #4f46e5;
+  --grad-c: #0891b2;
+}
+
+.dark {
+  --fg: 231 231 240; /* near-white */
+  --page: 7 7 12;
+  --glass-bg: 255 255 255;
+  --glass-bg-alpha: 0.04;
+  --glass-border-alpha: 0.08;
+  --backdrop-opacity: 1;
+  --grad-a: #c4b5fd;
+  --grad-b: #a5b4fc;
+  --grad-c: #67e8f9;
 }
 
 html,
@@ -14,10 +38,11 @@ body {
 }
 
 body {
-  background-color: #07070c;
-  color: #e7e7f0;
+  background-color: rgb(var(--page));
+  color: rgb(var(--fg));
   font-family: Inter, system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Ambient gradient + grid backdrop */
@@ -26,6 +51,7 @@ body {
   position: fixed;
   inset: 0;
   z-index: -2;
+  opacity: var(--backdrop-opacity);
   background:
     radial-gradient(60% 50% at 15% 0%, rgba(139, 92, 246, 0.22), transparent 60%),
     radial-gradient(50% 50% at 100% 10%, rgba(34, 211, 238, 0.14), transparent 55%),
@@ -38,18 +64,18 @@ body {
   inset: 0;
   z-index: -1;
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    linear-gradient(rgb(var(--fg) / 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(var(--fg) / 0.03) 1px, transparent 1px);
   background-size: 44px 44px;
   mask-image: radial-gradient(circle at 50% 20%, black, transparent 80%);
 }
 
 @layer components {
   .glass {
-    background: rgba(255, 255, 255, 0.04);
+    background: rgb(var(--glass-bg) / var(--glass-bg-alpha));
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgb(var(--fg) / var(--glass-border-alpha));
   }
 
   .glass-hover {
@@ -57,12 +83,17 @@ body {
   }
 
   .glass-hover:hover {
-    border-color: rgba(255, 255, 255, 0.18);
+    border-color: rgb(var(--fg) / 0.18);
     transform: translateY(-3px);
   }
 
   .text-gradient {
-    background: linear-gradient(135deg, #c4b5fd 0%, #a5b4fc 40%, #67e8f9 100%);
+    background: linear-gradient(
+      135deg,
+      var(--grad-a) 0%,
+      var(--grad-b) 40%,
+      var(--grad-c) 100%
+    );
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -74,6 +105,6 @@ body {
   height: 6px;
 }
 .scrollbar-slim::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.14);
+  background: rgb(var(--fg) / 0.14);
   border-radius: 9999px;
 }

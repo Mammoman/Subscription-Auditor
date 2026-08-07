@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: "class",
   content: [
     "./app/**/*.{ts,tsx}",
     "./components/**/*.{ts,tsx}",
@@ -8,6 +9,9 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Theme-aware foreground: white-ish in dark, near-black in light.
+        // Drives every neutral surface/text/border via alpha (e.g. text-fg/50).
+        fg: "rgb(var(--fg) / <alpha-value>)",
         ink: {
           950: "#07070c",
           900: "#0a0a12",

@@ -15,6 +15,37 @@ export const CURRENCIES: Record<CurrencyCode, CurrencyMeta> = {
   NGN: { code: "NGN", symbol: "₦", label: "Nigerian Naira", locale: "en-NG" },
 };
 
+/**
+ * Stored transaction amounts are treated as this base currency; the selector
+ * converts from here to the chosen display currency.
+ */
+export const BASE_CURRENCY: CurrencyCode = "USD";
+
+export type Rates = Record<CurrencyCode, number>;
+
+/**
+ * Offline fallback exchange rates (units of the currency per 1 USD). These are
+ * approximate and get replaced by live rates at runtime when available.
+ */
+export const FALLBACK_RATES: Rates = {
+  USD: 1,
+  EUR: 0.92,
+  GBP: 0.79,
+  NGN: 1550,
+};
+
+/** Convert an amount between currencies using USD-based rates. */
+export function convertAmount(
+  amount: number,
+  rates: Rates,
+  to: CurrencyCode,
+  from: CurrencyCode = BASE_CURRENCY
+): number {
+  const fromRate = rates[from] || 1;
+  const toRate = rates[to] || 1;
+  return (amount / fromRate) * toRate;
+}
+
 export function formatCurrency(
   n: number,
   currency: CurrencyCode = "USD",

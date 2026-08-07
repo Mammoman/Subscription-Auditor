@@ -11,9 +11,11 @@ import {
 import { Summary } from "@/lib/client-types";
 import { formatMonth } from "@/lib/format";
 import { useMoney } from "./CurrencyContext";
+import { useChartColors } from "./ThemeContext";
 
 export default function SpendTimeline({ summary }: { summary: Summary }) {
   const money = useMoney();
+  const c = useChartColors();
   const data = summary.timeline.map((t) => ({
     month: formatMonth(t.month),
     total: t.total,
@@ -22,10 +24,10 @@ export default function SpendTimeline({ summary }: { summary: Summary }) {
   return (
     <div className="glass rounded-2xl p-5">
       <div className="mb-4 flex items-baseline justify-between">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-white/60">
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-fg/60">
           Spend over time
         </h2>
-        <span className="text-xs text-white/40">all transactions / month</span>
+        <span className="text-xs text-fg/40">all transactions / month</span>
       </div>
       <div className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
@@ -38,25 +40,25 @@ export default function SpendTimeline({ summary }: { summary: Summary }) {
             </defs>
             <XAxis
               dataKey="month"
-              tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 11 }}
+              tick={{ fill: c.tick, fontSize: 11 }}
               axisLine={false}
               tickLine={false}
               minTickGap={16}
             />
             <YAxis
-              tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 11 }}
+              tick={{ fill: c.tick, fontSize: 11 }}
               axisLine={false}
               tickLine={false}
               width={48}
               tickFormatter={(v) => money(v, { cents: false })}
             />
             <Tooltip
-              cursor={{ stroke: "rgba(255,255,255,0.15)" }}
+              cursor={{ stroke: c.cursor }}
               contentStyle={{
-                background: "rgba(12,12,20,0.92)",
-                border: "1px solid rgba(255,255,255,0.1)",
+                background: c.tooltipBg,
+                border: `1px solid ${c.tooltipBorder}`,
                 borderRadius: 12,
-                color: "#fff",
+                color: c.tooltipText,
               }}
               formatter={(v: number) => [money(v), "Spend"]}
             />

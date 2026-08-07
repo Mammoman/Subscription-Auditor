@@ -20,14 +20,14 @@ export default function UpcomingRenewals({ summary }: { summary: Summary }) {
   return (
     <div className="glass rounded-2xl p-5">
       <div className="mb-4 flex items-baseline justify-between">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-white/60">
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-fg/60">
           Upcoming renewals
         </h2>
-        <span className="text-xs text-white/40">next 45 days</span>
+        <span className="text-xs text-fg/40">next 45 days</span>
       </div>
 
       {items.length === 0 ? (
-        <p className="py-6 text-center text-sm text-white/40">
+        <p className="py-6 text-center text-sm text-fg/40">
           Nothing renewing in the next 45 days.
         </p>
       ) : (
@@ -41,28 +41,28 @@ export default function UpcomingRenewals({ summary }: { summary: Summary }) {
                 initial={{ opacity: 0, x: 12 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.05 }}
-                className="glass-hover min-w-[150px] shrink-0 rounded-xl border border-white/5 bg-white/[0.03] p-4"
+                className="glass-hover min-w-[150px] shrink-0 rounded-xl border border-fg/5 bg-fg/[0.03] p-4"
               >
                 <div
                   className={clsx(
                     "inline-flex rounded-full px-2 py-0.5 text-xs font-medium",
                     urgent
                       ? "bg-danger/20 text-danger"
-                      : "bg-white/10 text-white/60"
+                      : "bg-fg/10 text-fg/60"
                   )}
                 >
                   {days === 0 ? "today" : `in ${days}d`}
                 </div>
-                <p className="mt-3 truncate font-medium text-white">
+                <p className="mt-3 truncate font-medium text-fg">
                   {item.merchant}
                 </p>
-                <p className="text-xs text-white/40">
+                <p className="text-xs text-fg/40">
                   {cadenceLabel(item.cadence)}
                 </p>
-                <p className="mt-2 text-lg font-semibold tabular-nums text-white">
+                <p className="mt-2 text-lg font-semibold tabular-nums text-fg">
                   {money(item.amount)}
                 </p>
-                <p className="text-xs text-white/40">{formatDate(item.date)}</p>
+                <p className="text-xs text-fg/40">{formatDate(item.date)}</p>
               </motion.div>
             );
           })}

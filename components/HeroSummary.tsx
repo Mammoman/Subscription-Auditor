@@ -66,7 +66,7 @@ export default function HeroSummary({ summary }: { summary: Summary }) {
           {s.emphasize && (
             <span className="absolute right-4 top-4 h-2 w-2 animate-pulse-soft rounded-full bg-danger" />
           )}
-          <p className="text-xs font-medium uppercase tracking-wider text-white/50">
+          <p className="text-xs font-medium uppercase tracking-wider text-fg/50">
             {s.label}
           </p>
           <p
@@ -74,12 +74,12 @@ export default function HeroSummary({ summary }: { summary: Summary }) {
               "mt-2 text-3xl font-semibold tabular-nums",
               s.tone === "danger" && "text-danger",
               s.tone === "warn" && "text-warn",
-              (!s.tone || s.tone === "default") && "text-white"
+              (!s.tone || s.tone === "default") && "text-fg"
             )}
           >
             <CountUp value={s.value} format={s.format} />
           </p>
-          {s.sub && <p className="mt-1 text-sm text-white/40">{s.sub}</p>}
+          {s.sub && <p className="mt-1 text-sm text-fg/40">{s.sub}</p>}
         </motion.div>
       ))}
     </div>

@@ -3,6 +3,7 @@
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { Summary } from "@/lib/client-types";
 import { useMoney } from "./CurrencyContext";
+import { useChartColors } from "./ThemeContext";
 
 const COLORS = [
   "#8b5cf6",
@@ -17,12 +18,13 @@ const COLORS = [
 
 export default function CategoryDonut({ summary }: { summary: Summary }) {
   const money = useMoney();
+  const c = useChartColors();
   const data = summary.byCategory;
   const total = data.reduce((s, d) => s + d.total, 0);
 
   return (
     <div className="glass rounded-2xl p-5">
-      <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-white/60">
+      <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-fg/60">
         By category
       </h2>
       <div className="flex flex-col items-center gap-4 sm:flex-row">
@@ -44,18 +46,18 @@ export default function CategoryDonut({ summary }: { summary: Summary }) {
               </Pie>
               <Tooltip
                 contentStyle={{
-                  background: "rgba(12,12,20,0.92)",
-                  border: "1px solid rgba(255,255,255,0.1)",
+                  background: c.tooltipBg,
+                  border: `1px solid ${c.tooltipBorder}`,
                   borderRadius: 12,
-                  color: "#fff",
+                  color: c.tooltipText,
                 }}
                 formatter={(v: number) => [money(v) + "/mo", "Spend"]}
               />
             </PieChart>
           </ResponsiveContainer>
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-xs text-white/40">per month</span>
-            <span className="text-xl font-semibold text-white">
+            <span className="text-xs text-fg/40">per month</span>
+            <span className="text-xl font-semibold text-fg">
               {money(total, { cents: false })}
             </span>
           </div>
@@ -67,8 +69,8 @@ export default function CategoryDonut({ summary }: { summary: Summary }) {
                 className="h-2.5 w-2.5 rounded-full"
                 style={{ background: COLORS[i % COLORS.length] }}
               />
-              <span className="text-white/70">{d.category}</span>
-              <span className="ml-auto tabular-nums text-white/50">
+              <span className="text-fg/70">{d.category}</span>
+              <span className="ml-auto tabular-nums text-fg/50">
                 {money(d.total)}
               </span>
             </li>

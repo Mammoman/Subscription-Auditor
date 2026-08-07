@@ -34,7 +34,7 @@ export default function PriceSparkline({
       width={width}
       height={height}
       viewBox={`0 0 ${width} ${height}`}
-      className="overflow-visible"
+      className="overflow-visible text-fg/50"
       aria-hidden
     >
       {points.slice(1).map((p, i) => {
@@ -59,7 +59,7 @@ export default function PriceSparkline({
           cx={p.x}
           cy={p.y}
           r={i === points.length - 1 ? 2.5 : 1.5}
-          fill={i === points.length - 1 ? "#c4b5fd" : "rgba(255,255,255,0.5)"}
+          fill={i === points.length - 1 ? "#8b5cf6" : "currentColor"}
         />
       ))}
     </svg>

@@ -44,10 +44,10 @@ export default function SubscriptionList({
   return (
     <div>
       <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-white/60">
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-fg/60">
           Subscriptions
         </h2>
-        <div className="flex gap-1 rounded-xl bg-white/5 p-1">
+        <div className="flex gap-1 rounded-xl bg-fg/5 p-1">
           {tabs.map((t) => (
             <button
               key={t.key}
@@ -55,8 +55,8 @@ export default function SubscriptionList({
               className={clsx(
                 "rounded-lg px-3 py-1.5 text-xs font-medium transition",
                 filter === t.key
-                  ? "bg-white/15 text-white"
-                  : "text-white/50 hover:text-white/80"
+                  ? "bg-fg/15 text-fg"
+                  : "text-fg/50 hover:text-fg/80"
               )}
             >
               {t.label}
@@ -66,7 +66,7 @@ export default function SubscriptionList({
       </div>
 
       {filtered.length === 0 ? (
-        <p className="glass rounded-2xl py-10 text-center text-sm text-white/40">
+        <p className="glass rounded-2xl py-10 text-center text-sm text-fg/40">
           No subscriptions in this view.
         </p>
       ) : (

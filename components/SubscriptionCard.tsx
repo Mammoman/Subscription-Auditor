@@ -36,22 +36,22 @@ const SubscriptionCard = forwardRef<HTMLDivElement, Props>(function Subscription
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="truncate text-lg font-semibold text-white">
+          <h3 className="truncate text-lg font-semibold text-fg">
             {sub.merchant}
           </h3>
-          <p className="text-xs text-white/40">{sub.category}</p>
+          <p className="text-xs text-fg/40">{sub.category}</p>
         </div>
-        <span className="shrink-0 rounded-full bg-white/10 px-2.5 py-1 text-xs font-medium text-white/70">
+        <span className="shrink-0 rounded-full bg-fg/10 px-2.5 py-1 text-xs font-medium text-fg/70">
           {cadenceLabel(sub.cadence)}
         </span>
       </div>
 
       <div className="mt-4 flex items-end justify-between">
         <div>
-          <p className="text-2xl font-semibold tabular-nums text-white">
+          <p className="text-2xl font-semibold tabular-nums text-fg">
             {money(sub.avgAmount)}
           </p>
-          <p className="text-xs text-white/40">
+          <p className="text-xs text-fg/40">
             {money(sub.monthlyCost)}/mo ·{" "}
             {money(sub.annualCost, { cents: false })}/yr
           </p>
@@ -75,8 +75,8 @@ const SubscriptionCard = forwardRef<HTMLDivElement, Props>(function Subscription
         )}
       </div>
 
-      <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-3">
-        <p className="text-xs text-white/40">
+      <div className="mt-4 flex items-center justify-between border-t border-fg/5 pt-3">
+        <p className="text-xs text-fg/40">
           {sub.isZombie
             ? `Last charged ${relativeTime(sub.lastSeen)}`
             : `Renews ${relativeTime(sub.nextRenewal)}`}
@@ -84,7 +84,7 @@ const SubscriptionCard = forwardRef<HTMLDivElement, Props>(function Subscription
         <button
           onClick={() => onCancel(sub)}
           disabled={canceling}
-          className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/80 transition hover:border-danger/40 hover:bg-danger/10 hover:text-danger disabled:opacity-50"
+          className="rounded-lg border border-fg/10 bg-fg/5 px-3 py-1.5 text-xs font-medium text-fg/80 transition hover:border-danger/40 hover:bg-danger/10 hover:text-danger disabled:opacity-50"
         >
           {canceling ? "Cancelling…" : "Cancel"}
         </button>

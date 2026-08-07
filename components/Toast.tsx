@@ -23,7 +23,7 @@ export default function ToastStack({ toasts }: { toasts: ToastMessage[] }) {
               "glass pointer-events-auto max-w-xs rounded-xl px-4 py-3 text-sm shadow-glass",
               t.tone === "success" && "border-good/30 text-good",
               t.tone === "danger" && "border-danger/30 text-danger",
-              (!t.tone || t.tone === "info") && "text-white/80"
+              (!t.tone || t.tone === "info") && "text-fg/80"
             )}
           >
             {t.text}

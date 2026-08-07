@@ -1,10 +1,13 @@
 import DashboardClient from "@/components/DashboardClient";
 import { CurrencyProvider } from "@/components/CurrencyContext";
+import { ThemeProvider } from "@/components/ThemeContext";
 
 export default function Page() {
   return (
-    <CurrencyProvider>
-      <DashboardClient />
-    </CurrencyProvider>
+    <ThemeProvider>
+      <CurrencyProvider>
+        <DashboardClient />
+      </CurrencyProvider>
+    </ThemeProvider>
   );
 }

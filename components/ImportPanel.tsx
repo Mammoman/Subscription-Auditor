@@ -36,7 +36,7 @@ export default function ImportPanel({
         "flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed p-4 text-center transition",
         dragging
           ? "border-brand-violet bg-brand-violet/10"
-          : "border-white/15 bg-white/[0.02] hover:border-white/30"
+          : "border-fg/15 bg-fg/[0.02] hover:border-fg/30"
       )}
     >
       <input
@@ -46,10 +46,10 @@ export default function ImportPanel({
         className="hidden"
         onChange={(e) => handleFiles(e.target.files)}
       />
-      <p className="text-sm font-medium text-white/80">
+      <p className="text-sm font-medium text-fg/80">
         {busy ? "Importing…" : "Drop a bank CSV or click to upload"}
       </p>
-      <p className="mt-1 text-xs text-white/40">
+      <p className="mt-1 text-xs text-fg/40">
         columns: date, description, amount
       </p>
     </div>
