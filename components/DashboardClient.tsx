@@ -12,7 +12,11 @@ import CategoryDonut from "./CategoryDonut";
 import UpcomingRenewals from "./UpcomingRenewals";
 import SubscriptionList from "./SubscriptionList";
 import ImportPanel from "./ImportPanel";
+import MonoConnectButton from "./MonoConnectButton";
 import ToastStack, { ToastMessage } from "./Toast";
+
+// Mono bank-connect is dormant until a public key is configured.
+const MONO_ENABLED = Boolean(process.env.NEXT_PUBLIC_MONO_PUBLIC_KEY);
 
 export default function DashboardClient() {
   const money = useMoney();
@@ -53,6 +57,16 @@ export default function DashboardClient() {
   }, [refresh]);
 
   const hasData = subscriptions.length > 0;
+
+  const monoButton = MONO_ENABLED ? (
+    <MonoConnectButton
+      onLinked={(n) => {
+        toast(`Synced ${n} bank transactions`, "success");
+        refresh();
+      }}
+      onError={(m) => toast(m, "danger")}
+    />
+  ) : null;
 
   async function loadDemo() {
     setBusy("seed");
@@ -173,7 +187,12 @@ export default function DashboardClient() {
       {loading ? (
         <LoadingSkeleton />
       ) : !hasData ? (
-        <EmptyState onLoadDemo={loadDemo} onImportCsv={importCsv} busy={busy} />
+        <EmptyState
+          onLoadDemo={loadDemo}
+          onImportCsv={importCsv}
+          busy={busy}
+          extra={monoButton}
+        />
       ) : (
         <div className="space-y-6">
           {summary && <HeroSummary summary={summary} />}
@@ -196,9 +215,12 @@ export default function DashboardClient() {
           />
 
           <div className="glass rounded-2xl p-5">
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-fg/60">
-              Add your own data
-            </h2>
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-fg/60">
+                Add your own data
+              </h2>
+              {monoButton}
+            </div>
             <ImportPanel onImportCsv={importCsv} busy={busy === "import"} />
           </div>
         </div>
@@ -211,10 +233,12 @@ function EmptyState({
   onLoadDemo,
   onImportCsv,
   busy,
+  extra,
 }: {
   onLoadDemo: () => void;
   onImportCsv: (csv: string) => void;
   busy: string | null;
+  extra?: React.ReactNode;
 }) {
   return (
     <motion.div
@@ -243,6 +267,7 @@ function EmptyState({
       <div className="mt-6">
         <ImportPanel onImportCsv={onImportCsv} busy={busy === "import"} />
       </div>
+      {extra && <div className="mt-4 flex justify-center">{extra}</div>}
     </motion.div>
   );
 }
