@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import pdf from "pdf-parse/lib/pdf-parse.js";
+import { extractText, getDocumentProxy } from "unpdf";
 import { prisma } from "@/lib/db";
 import { parseStatementText } from "@/lib/parse-statement";
 import { normalizeMerchant } from "@/lib/engine/normalize";
@@ -16,9 +16,10 @@ export async function POST(req: NextRequest) {
 
   let text: string;
   try {
-    const buffer = Buffer.from(await (file as File).arrayBuffer());
-    const parsed = await pdf(buffer);
-    text = parsed.text;
+    const bytes = new Uint8Array(await (file as File).arrayBuffer());
+    const doc = await getDocumentProxy(bytes);
+    const result = await extractText(doc, { mergePages: true });
+    text = Array.isArray(result.text) ? result.text.join("\n") : result.text;
   } catch {
     return NextResponse.json(
       { error: "Could not read the PDF" },

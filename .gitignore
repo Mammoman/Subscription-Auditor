@@ -20,3 +20,7 @@ prisma/dev.db*
 next-env.d.ts
 .vercel
 tsconfig.tsbuildinfo
+
+# local test artifacts
+test-statement.pdf
+gen-test-pdf.mjs
