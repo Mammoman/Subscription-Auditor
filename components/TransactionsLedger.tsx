@@ -33,23 +33,47 @@ function rowDate(iso: string): string {
 
 export default function TransactionsLedger({
   transactions,
+  accountFilter = null,
+  onClearAccount,
 }: {
   transactions: TransactionDTO[];
+  accountFilter?: string | null;
+  onClearAccount?: () => void;
 }) {
   const money = useMoney();
   const [dir, setDir] = useState<Dir>("debit");
   const [selected, setSelected] = useState<string>("all");
 
-  const counts = useMemo(
-    () => ({
-      debit: transactions.filter((t) => t.direction === "debit").length,
-      credit: transactions.filter((t) => t.direction === "credit").length,
-    }),
-    [transactions]
+  // Scope to a single account when one is selected from the Accounts ledger.
+  const scoped = useMemo(
+    () =>
+      accountFilter
+        ? transactions.filter((t) => t.account === accountFilter)
+        : transactions,
+    [transactions, accountFilter]
   );
 
+  const counts = useMemo(
+    () => ({
+      debit: scoped.filter((t) => t.direction === "debit").length,
+      credit: scoped.filter((t) => t.direction === "credit").length,
+    }),
+    [scoped]
+  );
+
+  const accountTotals = useMemo(() => {
+    const sent = scoped.filter((t) => t.direction === "debit");
+    const received = scoped.filter((t) => t.direction === "credit");
+    return {
+      sentCount: sent.length,
+      sentTotal: sent.reduce((s, t) => s + t.amount, 0),
+      receivedCount: received.length,
+      receivedTotal: received.reduce((s, t) => s + t.amount, 0),
+    };
+  }, [scoped]);
+
   const { months, groups, filteredCount } = useMemo(() => {
-    const filtered = transactions.filter((t) => t.direction === dir);
+    const filtered = scoped.filter((t) => t.direction === dir);
     const g = new Map<string, TransactionDTO[]>();
     for (const t of filtered) {
       const k = monthKey(t.date);
@@ -57,7 +81,7 @@ export default function TransactionsLedger({
     }
     const m = [...g.keys()].sort((a, b) => b.localeCompare(a));
     return { months: m, groups: g, filteredCount: filtered.length };
-  }, [transactions, dir]);
+  }, [scoped, dir]);
 
   if (transactions.length === 0) return null;
 
@@ -65,10 +89,11 @@ export default function TransactionsLedger({
     selected === "all" || !groups.has(selected) ? months : [selected];
 
   return (
-    <section>
+    <section id="transactions-ledger" className="scroll-mt-6">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3 border-b border-fg/12 pb-3">
-        <h2 className="eyebrow">All transactions</h2>
-        {/* Money out / in toggle */}
+        <h2 className="eyebrow">
+          {accountFilter ? "Transactions with account" : "All transactions"}
+        </h2>
         <div className="flex overflow-hidden rounded-[3px] border border-fg/15">
           {(
             [
@@ -97,6 +122,34 @@ export default function TransactionsLedger({
         </div>
       </div>
 
+      {/* Account banner — sent / received summary for the selected account */}
+      {accountFilter && (
+        <div className="glass mb-3 flex flex-wrap items-center justify-between gap-3 border-l-2 border-l-fg/40 p-4">
+          <div>
+            <p className="font-display text-lg font-semibold text-fg">
+              {accountFilter}
+            </p>
+            <p className="figures mt-0.5 text-sm">
+              <span className="text-red/90">
+                ↑ sent {money(accountTotals.sentTotal)}{" "}
+                <span className="text-fg/40">×{accountTotals.sentCount}</span>
+              </span>
+              <span className="mx-2 text-fg/25">·</span>
+              <span className="text-green">
+                ↓ received {money(accountTotals.receivedTotal)}{" "}
+                <span className="text-fg/40">×{accountTotals.receivedCount}</span>
+              </span>
+            </p>
+          </div>
+          <button
+            onClick={onClearAccount}
+            className="figures rounded-[3px] border border-fg/20 px-3 py-1.5 text-xs uppercase tracking-wide text-fg/70 transition hover:border-fg/40 hover:text-fg"
+          >
+            ✕ Clear
+          </button>
+        </div>
+      )}
+
       {/* Month filter */}
       <div className="scrollbar-slim mb-3 flex gap-1 overflow-x-auto pb-1">
         <MonthChip
@@ -116,27 +169,34 @@ export default function TransactionsLedger({
 
       {/* Scrollable ledger — contained so it never pushes the page around */}
       <div className="scrollbar-slim max-h-[65vh] space-y-6 overflow-y-auto rounded-[4px] border border-fg/10 bg-surface/40 p-4">
-        {visible.map((k) => {
-          const rows = groups.get(k) ?? [];
-          const total = rows.reduce((s, t) => s + t.amount, 0);
-          return (
-            <div key={k}>
-              <div className="sticky top-0 -mx-4 mb-2 flex items-baseline justify-between border-b border-fg/10 bg-paper/90 px-4 py-1.5 backdrop-blur">
-                <h3 className="font-display text-sm font-semibold text-fg">
-                  {monthLabel(k)}
-                </h3>
-                <span className="figures text-xs text-fg/45">
-                  {rows.length} · {money(total)}
-                </span>
+        {visible.length === 0 ? (
+          <p className="py-8 text-center text-sm text-fg/40">
+            No {dir === "debit" ? "money-out" : "money-in"} transactions
+            {accountFilter ? " with this account" : ""}.
+          </p>
+        ) : (
+          visible.map((k) => {
+            const rows = groups.get(k) ?? [];
+            const total = rows.reduce((s, t) => s + t.amount, 0);
+            return (
+              <div key={k}>
+                <div className="sticky top-0 -mx-4 mb-2 flex items-baseline justify-between border-b border-fg/10 bg-paper/90 px-4 py-1.5 backdrop-blur">
+                  <h3 className="font-display text-sm font-semibold text-fg">
+                    {monthLabel(k)}
+                  </h3>
+                  <span className="figures text-xs text-fg/45">
+                    {rows.length} · {money(total)}
+                  </span>
+                </div>
+                <div className="divide-y divide-fg/8">
+                  {rows.map((t) => (
+                    <Row key={t.id} t={t} money={money} />
+                  ))}
+                </div>
               </div>
-              <div className="divide-y divide-fg/8">
-                {rows.map((t) => (
-                  <Row key={t.id} t={t} money={money} />
-                ))}
-              </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
     </section>
   );

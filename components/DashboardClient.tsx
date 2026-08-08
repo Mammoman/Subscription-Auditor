@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import {
   Summary,
   SubscriptionDTO,
-  TransferRecipientDTO,
+  AccountSummaryDTO,
   TransactionDTO,
 } from "@/lib/client-types";
 import { useMoney } from "./CurrencyContext";
@@ -16,7 +16,7 @@ import SpendTimeline from "./SpendTimeline";
 import CategoryLedger from "./CategoryLedger";
 import UpcomingRenewals from "./UpcomingRenewals";
 import SubscriptionList from "./SubscriptionList";
-import TransfersLedger from "./TransfersLedger";
+import AccountsLedger from "./AccountsLedger";
 import TransactionsLedger from "./TransactionsLedger";
 import ImportPanel from "./ImportPanel";
 import MonoConnectButton from "./MonoConnectButton";
@@ -29,8 +29,9 @@ export default function DashboardClient() {
   const money = useMoney();
   const [summary, setSummary] = useState<Summary | null>(null);
   const [subscriptions, setSubscriptions] = useState<SubscriptionDTO[]>([]);
-  const [transfers, setTransfers] = useState<TransferRecipientDTO[]>([]);
+  const [accounts, setAccounts] = useState<AccountSummaryDTO[]>([]);
   const [txns, setTxns] = useState<TransactionDTO[]>([]);
+  const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [cancelingMerchant, setCancelingMerchant] = useState<string | null>(null);
@@ -44,24 +45,24 @@ export default function DashboardClient() {
 
   const refresh = useCallback(async () => {
     try {
-      const [sRes, subRes, trRes, txRes] = await Promise.all([
+      const [sRes, subRes, acRes, txRes] = await Promise.all([
         fetch("/api/summary", { cache: "no-store" }),
         fetch("/api/subscriptions", { cache: "no-store" }),
-        fetch("/api/transfers", { cache: "no-store" }),
+        fetch("/api/accounts", { cache: "no-store" }),
         fetch("/api/transactions", { cache: "no-store" }),
       ]);
-      if (!sRes.ok || !subRes.ok || !trRes.ok || !txRes.ok)
+      if (!sRes.ok || !subRes.ok || !acRes.ok || !txRes.ok)
         throw new Error("fetch failed");
       const s: Summary = await sRes.json();
       const { subscriptions: subs }: { subscriptions: SubscriptionDTO[] } =
         await subRes.json();
-      const { transfers: trs }: { transfers: TransferRecipientDTO[] } =
-        await trRes.json();
+      const { accounts: acc }: { accounts: AccountSummaryDTO[] } =
+        await acRes.json();
       const { transactions: tx }: { transactions: TransactionDTO[] } =
         await txRes.json();
       setSummary(s);
       setSubscriptions(subs);
-      setTransfers(trs);
+      setAccounts(acc);
       setTxns(tx);
     } catch {
       toast("Couldn't load data. Is the server running?", "danger");
@@ -77,6 +78,15 @@ export default function DashboardClient() {
   const hasSubs = subscriptions.length > 0;
   const txnCount = summary?.transactionCount ?? 0;
   const hasData = hasSubs || txnCount > 0;
+
+  function selectAccount(account: string) {
+    setSelectedAccount((prev) => (prev === account ? null : account));
+    setTimeout(() => {
+      document
+        .getElementById("transactions-ledger")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 60);
+  }
 
   const monoButton = MONO_ENABLED ? (
     <MonoConnectButton
@@ -284,18 +294,32 @@ export default function DashboardClient() {
             </>
           ) : (
             <>
-              {/* Transfer-heavy import with no subscriptions: lead with people paid */}
-              {transfers.length > 0 && <TransfersLedger transfers={transfers} />}
+              {/* No subscriptions: lead with the accounts you've moved money with */}
+              {accounts.length > 0 && (
+                <AccountsLedger
+                  accounts={accounts}
+                  selected={selectedAccount}
+                  onSelect={selectAccount}
+                />
+              )}
               <NoSubscriptionsNotice count={txnCount} />
               {summary && <SpendTimeline summary={summary} />}
             </>
           )}
 
-          {hasSubs && transfers.length > 0 && (
-            <TransfersLedger transfers={transfers} />
+          {hasSubs && accounts.length > 0 && (
+            <AccountsLedger
+              accounts={accounts}
+              selected={selectedAccount}
+              onSelect={selectAccount}
+            />
           )}
 
-          <TransactionsLedger transactions={txns} />
+          <TransactionsLedger
+            transactions={txns}
+            accountFilter={selectedAccount}
+            onClearAccount={() => setSelectedAccount(null)}
+          />
 
           <div className="glass p-5">
             <div className="mb-3 flex items-center justify-between gap-3">

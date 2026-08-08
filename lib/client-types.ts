@@ -23,6 +23,18 @@ export interface TransactionDTO {
   category: string | null;
   isTransfer: boolean;
   direction: "debit" | "credit";
+  account: string | null;
+}
+
+/** An account/person you've moved money with (both directions). */
+export interface AccountSummaryDTO {
+  account: string;
+  sentCount: number;
+  sentTotal: number;
+  receivedCount: number;
+  receivedTotal: number;
+  net: number;
+  lastActivity: string;
 }
 
 /** A transfer recipient as serialized over the API (Dates become ISO strings). */

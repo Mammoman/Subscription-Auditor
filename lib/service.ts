@@ -1,6 +1,13 @@
 import { prisma } from "./db";
 import { buildSubscriptions } from "./engine/analyze";
-import { buildTransfers, isTransfer, TransferRecipient } from "./engine/transfers";
+import {
+  buildTransfers,
+  buildAccounts,
+  isTransfer,
+  extractRecipient,
+  TransferRecipient,
+  AccountSummary,
+} from "./engine/transfers";
 import { normalizeMerchant } from "./engine/normalize";
 import { Subscription, Txn } from "./engine/types";
 import type { Direction } from "./parse-csv";
@@ -135,6 +142,7 @@ export interface TransactionRow {
   category: string | null;
   isTransfer: boolean;
   direction: Direction;
+  account: string | null; // counterparty name for transfer rows
 }
 
 /** Every imported transaction, newest first — the raw itemized ledger. */
@@ -142,15 +150,25 @@ export async function getTransactions(): Promise<TransactionRow[]> {
   const rows = await loadActiveRows();
   return rows
     .sort((a, b) => b.date.getTime() - a.date.getTime())
-    .map((t) => ({
-      id: t.id,
-      date: t.date.toISOString(),
-      merchant: t.merchantRaw,
-      amount: round2(t.amount),
-      category: t.category ?? null,
-      isTransfer: t.direction === "debit" && isTransfer(t.merchantRaw),
-      direction: t.direction,
-    }));
+    .map((t) => {
+      const transfer = isTransfer(t.merchantRaw);
+      return {
+        id: t.id,
+        date: t.date.toISOString(),
+        merchant: t.merchantRaw,
+        amount: round2(t.amount),
+        category: t.category ?? null,
+        isTransfer: transfer,
+        direction: t.direction,
+        account: transfer ? extractRecipient(t.merchantRaw) : null,
+      };
+    });
+}
+
+/** People/accounts you've moved money with — sent and received, both ways. */
+export async function getAccounts(): Promise<AccountSummary[]> {
+  const rows = await loadActiveRows();
+  return buildAccounts(rows.filter((r) => isTransfer(r.merchantRaw)));
 }
 
 /** Split transactions into person-to-person transfers and merchant charges. */

@@ -50,9 +50,9 @@ export function extractRecipient(merchantRaw: string): string {
     if (nameSeg) return titleCaseName(nameSeg);
   }
 
-  // "... to JOHN DOE ..." patterns.
+  // "... to/from JOHN DOE ..." patterns (outgoing or incoming).
   const m = merchantRaw.match(
-    /\b(?:to)\s+([A-Za-z][A-Za-z .'-]{2,}?)(?:\s+\d|\s+ref\b|$)/i
+    /\b(?:to|from)\s+([A-Za-z][A-Za-z .'-]{2,}?)(?:\s+\d|\s+ref\b|$)/i
   );
   if (m) return titleCaseName(m[1]);
 
@@ -104,4 +104,60 @@ export function buildTransfers(txns: Txn[]): TransferRecipient[] {
   }
 
   return recipients.sort((a, b) => b.totalSent - a.totalSent);
+}
+
+export type Direction = "debit" | "credit";
+export type DirectedTxn = Txn & { direction: Direction };
+
+export interface AccountSummary {
+  account: string;
+  sentCount: number; // times you sent them money (debits)
+  sentTotal: number;
+  receivedCount: number; // times they sent you money (credits)
+  receivedTotal: number;
+  net: number; // receivedTotal - sentTotal
+  lastActivity: Date;
+}
+
+/**
+ * Aggregate every transfer by counterparty across BOTH directions: how much you
+ * sent to and received from each account. Debits = money out to them, credits =
+ * money in from them. Sorted by total two-way volume, descending.
+ */
+export function buildAccounts(txns: DirectedTxn[]): AccountSummary[] {
+  const groups = new Map<string, { name: string; txns: DirectedTxn[] }>();
+
+  for (const t of txns) {
+    if (!isTransfer(t.merchantRaw)) continue;
+    const name = extractRecipient(t.merchantRaw);
+    const key = recipientKey(name);
+    const g = groups.get(key);
+    if (g) g.txns.push(t);
+    else groups.set(key, { name, txns: [t] });
+  }
+
+  const accounts: AccountSummary[] = [];
+  for (const { name, txns: group } of groups.values()) {
+    const sent = group.filter((t) => t.direction === "debit");
+    const received = group.filter((t) => t.direction === "credit");
+    const sentTotal = sent.reduce((s, t) => s + t.amount, 0);
+    const receivedTotal = received.reduce((s, t) => s + t.amount, 0);
+    const lastActivity = group.reduce(
+      (mx, t) => (t.date > mx ? t.date : mx),
+      group[0].date
+    );
+    accounts.push({
+      account: name,
+      sentCount: sent.length,
+      sentTotal,
+      receivedCount: received.length,
+      receivedTotal,
+      net: receivedTotal - sentTotal,
+      lastActivity,
+    });
+  }
+
+  return accounts.sort(
+    (a, b) => b.sentTotal + b.receivedTotal - (a.sentTotal + a.receivedTotal)
+  );
 }
