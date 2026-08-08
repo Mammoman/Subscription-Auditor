@@ -120,14 +120,32 @@ export default function DashboardClient() {
     }
   }
 
-  async function importPdf(file: File) {
+  async function importPdf(file: File, password?: string) {
     setBusy("import");
     try {
       const fd = new FormData();
       fd.append("file", file);
+      if (password) fd.append("password", password);
       const res = await fetch("/api/import-pdf", { method: "POST", body: fd });
-      if (!res.ok) throw new Error("pdf failed");
-      const { imported, skipped } = await res.json();
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        if (data?.needsPassword) {
+          const entered = window.prompt(
+            password
+              ? "Incorrect password. Try again:"
+              : "This PDF is password-protected. Enter its password:"
+          );
+          if (entered) {
+            await importPdf(file, entered);
+            return;
+          }
+        }
+        toast(data?.error || "PDF import failed — try a CSV export instead", "danger");
+        return;
+      }
+
+      const { imported, skipped } = data;
       if (imported === 0) {
         toast("No transactions found in that PDF", "danger");
       } else {

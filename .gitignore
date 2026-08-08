@@ -24,3 +24,5 @@ tsconfig.tsbuildinfo
 # local test artifacts
 test-statement.pdf
 gen-test-pdf.mjs
+bank-statement-demo.pdf
+gen-statement.mjs
