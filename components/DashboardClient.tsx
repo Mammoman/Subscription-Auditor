@@ -2,7 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Summary, SubscriptionDTO, TransferRecipientDTO } from "@/lib/client-types";
+import {
+  Summary,
+  SubscriptionDTO,
+  TransferRecipientDTO,
+  TransactionDTO,
+} from "@/lib/client-types";
 import { useMoney } from "./CurrencyContext";
 import CurrencySelector from "./CurrencySelector";
 import ThemeToggle from "./ThemeToggle";
@@ -12,6 +17,7 @@ import CategoryLedger from "./CategoryLedger";
 import UpcomingRenewals from "./UpcomingRenewals";
 import SubscriptionList from "./SubscriptionList";
 import TransfersLedger from "./TransfersLedger";
+import TransactionsLedger from "./TransactionsLedger";
 import ImportPanel from "./ImportPanel";
 import MonoConnectButton from "./MonoConnectButton";
 import ToastStack, { ToastMessage } from "./Toast";
@@ -24,6 +30,7 @@ export default function DashboardClient() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [subscriptions, setSubscriptions] = useState<SubscriptionDTO[]>([]);
   const [transfers, setTransfers] = useState<TransferRecipientDTO[]>([]);
+  const [txns, setTxns] = useState<TransactionDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [cancelingMerchant, setCancelingMerchant] = useState<string | null>(null);
@@ -37,20 +44,25 @@ export default function DashboardClient() {
 
   const refresh = useCallback(async () => {
     try {
-      const [sRes, subRes, trRes] = await Promise.all([
+      const [sRes, subRes, trRes, txRes] = await Promise.all([
         fetch("/api/summary", { cache: "no-store" }),
         fetch("/api/subscriptions", { cache: "no-store" }),
         fetch("/api/transfers", { cache: "no-store" }),
+        fetch("/api/transactions", { cache: "no-store" }),
       ]);
-      if (!sRes.ok || !subRes.ok || !trRes.ok) throw new Error("fetch failed");
+      if (!sRes.ok || !subRes.ok || !trRes.ok || !txRes.ok)
+        throw new Error("fetch failed");
       const s: Summary = await sRes.json();
       const { subscriptions: subs }: { subscriptions: SubscriptionDTO[] } =
         await subRes.json();
       const { transfers: trs }: { transfers: TransferRecipientDTO[] } =
         await trRes.json();
+      const { transactions: tx }: { transactions: TransactionDTO[] } =
+        await txRes.json();
       setSummary(s);
       setSubscriptions(subs);
       setTransfers(trs);
+      setTxns(tx);
     } catch {
       toast("Couldn't load data. Is the server running?", "danger");
     } finally {
@@ -276,6 +288,8 @@ export default function DashboardClient() {
           )}
 
           {transfers.length > 0 && <TransfersLedger transfers={transfers} />}
+
+          <TransactionsLedger transactions={txns} />
 
           <div className="glass p-5">
             <div className="mb-3 flex items-center justify-between gap-3">

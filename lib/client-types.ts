@@ -14,6 +14,16 @@ export interface PricePointDTO {
   amount: number;
 }
 
+/** A single transaction row as serialized over the API. */
+export interface TransactionDTO {
+  id: string;
+  date: string;
+  merchant: string;
+  amount: number;
+  category: string | null;
+  isTransfer: boolean;
+}
+
 /** A transfer recipient as serialized over the API (Dates become ISO strings). */
 export interface TransferRecipientDTO {
   recipient: string;

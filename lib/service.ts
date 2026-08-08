@@ -41,6 +41,30 @@ async function loadActiveTxns(): Promise<Txn[]> {
   }));
 }
 
+export interface TransactionRow {
+  id: string;
+  date: string; // ISO
+  merchant: string;
+  amount: number;
+  category: string | null;
+  isTransfer: boolean;
+}
+
+/** Every imported transaction, newest first — the raw itemized ledger. */
+export async function getTransactions(): Promise<TransactionRow[]> {
+  const txns = await loadActiveTxns();
+  return txns
+    .sort((a, b) => b.date.getTime() - a.date.getTime())
+    .map((t) => ({
+      id: t.id,
+      date: t.date.toISOString(),
+      merchant: t.merchantRaw,
+      amount: round2(t.amount),
+      category: t.category ?? null,
+      isTransfer: isTransfer(t.merchantRaw),
+    }));
+}
+
 /** Split transactions into person-to-person transfers and merchant charges. */
 function classify(txns: Txn[]): { charges: Txn[]; transfers: Txn[] } {
   const charges: Txn[] = [];
