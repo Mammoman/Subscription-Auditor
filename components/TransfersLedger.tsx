@@ -71,7 +71,7 @@ export default function TransfersLedger({
                   ×{t.count}
                 </span>
                 <span className="figures hidden shrink-0 text-xs text-fg/35 sm:inline">
-                  last {relativeTime(t.lastSent)}
+                  sent {relativeTime(t.lastSent)}
                 </span>
               </div>
             </div>
