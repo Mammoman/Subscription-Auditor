@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
 import { fetchMonoTransactions, isMonoConfigured } from "@/lib/providers/mono";
-import { normalizeMerchant } from "@/lib/engine/normalize";
+import { importTransactions } from "@/lib/service";
 
 export const dynamic = "force-dynamic";
 
@@ -21,18 +20,8 @@ export async function POST(req: NextRequest) {
 
   try {
     const rows = await fetchMonoTransactions(accountId);
-    if (rows.length > 0) {
-      await prisma.transaction.createMany({
-        data: rows.map((r) => ({
-          date: r.date,
-          merchantRaw: r.merchantRaw,
-          merchantNormalized: normalizeMerchant(r.merchantRaw),
-          amount: r.amount,
-          category: r.category,
-        })),
-      });
-    }
-    return NextResponse.json({ imported: rows.length });
+    const { imported, duplicates } = await importTransactions(rows);
+    return NextResponse.json({ imported, duplicates });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "sync failed" },

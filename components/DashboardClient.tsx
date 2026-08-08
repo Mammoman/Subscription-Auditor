@@ -123,11 +123,11 @@ export default function DashboardClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ csv }),
       });
-      const { imported, skipped } = await res.json();
+      const { imported, skipped, duplicates } = await res.json();
       toast(
         `Imported ${imported} charges${
-          skipped?.length ? `, skipped ${skipped.length}` : ""
-        }`,
+          duplicates ? `, ${duplicates} duplicates skipped` : ""
+        }${skipped?.length ? `, ${skipped.length} unreadable` : ""}`,
         "success"
       );
       await refresh();
@@ -163,14 +163,16 @@ export default function DashboardClient() {
         return;
       }
 
-      const { imported, skipped } = data;
-      if (imported === 0) {
+      const { imported, skipped, duplicates } = data;
+      if (imported === 0 && !duplicates) {
         toast("No transactions found in that PDF", "danger");
+      } else if (imported === 0 && duplicates) {
+        toast(`Already imported — ${duplicates} duplicates skipped`, "info");
       } else {
         toast(
-          `Imported ${imported} charges from PDF${
-            skipped?.length ? `, skipped ${skipped.length}` : ""
-          }`,
+          `Imported ${imported} from PDF${
+            duplicates ? `, ${duplicates} duplicates skipped` : ""
+          }${skipped?.length ? `, ${skipped.length} unreadable` : ""}`,
           "success"
         );
       }

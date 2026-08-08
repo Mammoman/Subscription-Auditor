@@ -1,7 +1,73 @@
 import { prisma } from "./db";
 import { buildSubscriptions } from "./engine/analyze";
 import { buildTransfers, isTransfer, TransferRecipient } from "./engine/transfers";
+import { normalizeMerchant } from "./engine/normalize";
 import { Subscription, Txn } from "./engine/types";
+
+export interface ImportRow {
+  date: Date;
+  merchantRaw: string;
+  amount: number;
+  category?: string;
+}
+
+export interface ImportResult {
+  imported: number;
+  duplicates: number;
+}
+
+/** Dedup key: same day + normalized merchant + amount => the same charge. */
+function dedupeKey(date: Date, merchantNormalized: string, amount: number): string {
+  return `${date.toISOString().slice(0, 10)}|${merchantNormalized}|${amount}`;
+}
+
+/**
+ * Insert transactions, skipping any that duplicate an existing active row or an
+ * earlier row in the same batch. This makes re-importing a statement (or an
+ * overlapping one) idempotent instead of double-counting.
+ */
+export async function importTransactions(
+  rows: ImportRow[]
+): Promise<ImportResult> {
+  const existing = await prisma.transaction.findMany({
+    where: { status: "active" },
+    select: { date: true, merchantNormalized: true, amount: true },
+  });
+  const seen = new Set(
+    existing.map((e) => dedupeKey(e.date, e.merchantNormalized, e.amount))
+  );
+
+  const toInsert: {
+    date: Date;
+    merchantRaw: string;
+    merchantNormalized: string;
+    amount: number;
+    category?: string;
+  }[] = [];
+  let duplicates = 0;
+
+  for (const r of rows) {
+    const merchantNormalized = normalizeMerchant(r.merchantRaw);
+    const key = dedupeKey(r.date, merchantNormalized, r.amount);
+    if (seen.has(key)) {
+      duplicates++;
+      continue;
+    }
+    seen.add(key);
+    toInsert.push({
+      date: r.date,
+      merchantRaw: r.merchantRaw,
+      merchantNormalized,
+      amount: r.amount,
+      category: r.category,
+    });
+  }
+
+  if (toInsert.length > 0) {
+    await prisma.transaction.createMany({ data: toInsert });
+  }
+  return { imported: toInsert.length, duplicates };
+}
 
 export interface SummaryUpcoming {
   merchant: string;
