@@ -6,6 +6,8 @@ import { importTransactions } from "@/lib/service";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
+
 function isPasswordError(err: unknown): boolean {
   const e = err as { name?: string; message?: string } | undefined;
   return (
@@ -14,21 +16,41 @@ function isPasswordError(err: unknown): boolean {
 }
 
 export async function POST(req: NextRequest) {
-  const form = await req.formData().catch(() => null);
+  let form: FormData | null;
+  try {
+    form = await req.formData();
+  } catch (err) {
+    console.error("[import-pdf] FormData parse failed:", err);
+    return NextResponse.json(
+      { error: "Could not read the upload — the file may be too large or the request was interrupted." },
+      { status: 400 }
+    );
+  }
+
   const file = form?.get("file");
   if (!file || typeof file === "string") {
     return NextResponse.json({ error: "file is required" }, { status: 400 });
   }
+
+  const blob = file as File;
+  if (blob.size > MAX_SIZE) {
+    return NextResponse.json(
+      { error: `File is ${(blob.size / 1024 / 1024).toFixed(1)} MB — max 10 MB. Export a shorter date range and try again.` },
+      { status: 413 }
+    );
+  }
+
   const password = form?.get("password");
   const pwd = typeof password === "string" && password ? password : undefined;
 
   let text: string;
   try {
-    const bytes = new Uint8Array(await (file as File).arrayBuffer());
+    const bytes = new Uint8Array(await blob.arrayBuffer());
     const doc = await getDocumentProxy(bytes, pwd ? { password: pwd } : undefined);
     const result = await extractText(doc, { mergePages: true });
     text = Array.isArray(result.text) ? result.text.join("\n") : result.text;
   } catch (err) {
+    console.error("[import-pdf] PDF extraction failed:", err);
     if (isPasswordError(err)) {
       return NextResponse.json(
         {
@@ -60,6 +82,11 @@ export async function POST(req: NextRequest) {
   }
 
   const { rows, skipped, format } = parseBankStatement(text);
+
+  if (rows.length === 0) {
+    console.warn("[import-pdf] Parsed 0 rows from", blob.name, "format:", format, "text length:", text.length);
+  }
+
   const { imported, duplicates } = await importTransactions(rows);
 
   return NextResponse.json({ imported, duplicates, skipped, format });

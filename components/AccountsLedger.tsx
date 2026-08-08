@@ -36,7 +36,7 @@ export default function AccountsLedger({
         <span className="figures text-green">{money(totalReceived, { cents: false })}</span>
       </p>
 
-      <div className="glass divide-y divide-fg/8">
+      <div className="scrollbar-slim glass max-h-[65vh] divide-y divide-fg/8 overflow-y-auto">
         {accounts.map((a, i) => {
           const isActive = selected === a.account;
           return (

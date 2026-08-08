@@ -16,16 +16,18 @@ describe("OPay parser", () => {
   });
 
   it("parses direction from the debit/credit columns and cleans merchants", () => {
-    const { rows } = parseOpay(SAMPLE);
-    expect(rows).toHaveLength(4);
+    const { rows, skipped } = parseOpay(SAMPLE);
+    // Auto-save to OWealth is filtered as internal churn → 3 real rows.
+    expect(rows).toHaveLength(3);
 
     const inflow = rows.find((r) => r.merchantRaw.startsWith("Transfer from"));
     expect(inflow?.direction).toBe("credit");
     expect(inflow?.amount).toBeCloseTo(4000);
     expect(inflow?.merchantRaw).toBe("Transfer from EMMANUEL OLUWATOBILOBA YUSUF");
 
-    const save = rows.find((r) => r.merchantRaw.includes("OWealth"));
-    expect(save?.direction).toBe("debit");
+    // The OWealth auto-save should be in skipped, not in rows.
+    expect(rows.find((r) => r.merchantRaw.includes("OWealth"))).toBeUndefined();
+    expect(skipped.some((s) => s.reason.includes("OPay wallet churn"))).toBe(true);
 
     const spotify = rows.find((r) => r.merchantRaw === "Spotify");
     expect(spotify?.direction).toBe("debit");

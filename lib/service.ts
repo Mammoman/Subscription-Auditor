@@ -114,19 +114,35 @@ export interface Summary {
 
 type ActiveRow = Txn & { direction: Direction };
 
+/**
+ * OPay (and similar fintech wallets) generate internal bookkeeping entries for
+ * auto-save, OWealth deposits/withdrawals, cashback, and bonuses. These are not
+ * real spending — they inflate totals and create phantom "subscriptions". We
+ * filter them out at the service layer so all downstream logic (subscriptions,
+ * transfers, summaries) sees only real transactions.
+ */
+const INTERNAL_CHURN =
+  /\b(auto[- ]?save|owealth|wallet top[- ]?up|wallet funding|cashback|bonus|referral reward|interest (credit|earned))\b/i;
+
+function isInternalChurn(merchantRaw: string): boolean {
+  return INTERNAL_CHURN.test(merchantRaw);
+}
+
 /** Load non-cancelled transactions from the DB, keeping their direction. */
 async function loadActiveRows(): Promise<ActiveRow[]> {
   const rows = await prisma.transaction.findMany({
     where: { status: "active" },
   });
-  return rows.map((r) => ({
-    id: r.id,
-    date: r.date,
-    merchantRaw: r.merchantRaw,
-    amount: r.amount,
-    category: r.category ?? undefined,
-    direction: (r.direction === "credit" ? "credit" : "debit") as Direction,
-  }));
+  return rows
+    .map((r) => ({
+      id: r.id,
+      date: r.date,
+      merchantRaw: r.merchantRaw,
+      amount: r.amount,
+      category: r.category ?? undefined,
+      direction: (r.direction === "credit" ? "credit" : "debit") as Direction,
+    }))
+    .filter((r) => !isInternalChurn(r.merchantRaw));
 }
 
 /** Only outgoing (debit) transactions feed subscription & transfer detection. */

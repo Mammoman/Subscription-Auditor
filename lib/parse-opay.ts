@@ -11,6 +11,15 @@ const RECORD_START = /(\d{2}\s+[A-Za-z]{3}\s+\d{4})\s+\d{2}:\d{2}:\d{2}/g;
 // The money block: "(-- amount | amount --) balance"; one side is always "--".
 const MONEY = /(?:--\s+([\d,]+\.\d{2})|([\d,]+\.\d{2})\s+--)\s+([\d,]+\.\d{2})/;
 
+/**
+ * OPay internal wallet churn — these are bookkeeping moves between the user's
+ * own OPay wallet and OWealth savings, not real spending. Filtering them out
+ * prevents inflated totals. Matched against the raw record text (before
+ * description cleaning) because some descriptions get truncated.
+ */
+const INTERNAL_CHURN =
+  /\b(auto[- ]?save|owealth|wallet top[- ]?up|wallet funding|cashback|bonus|referral reward|interest (credit|earned))\b/i;
+
 export function looksLikeOpay(text: string): boolean {
   return (
     /OWealth|Wallet Account|OPay/i.test(text) &&
@@ -47,6 +56,12 @@ export function parseOpay(text: string): ParseResult {
 
     const date = new Date(marks[i][1]);
     if (isNaN(date.getTime())) continue;
+
+    // Skip OPay internal wallet shuffles before parsing amounts.
+    if (INTERNAL_CHURN.test(record)) {
+      skipped.push({ line: i + 1, reason: "internal OPay wallet churn (auto-save/OWealth)" });
+      continue;
+    }
 
     const money = record.match(MONEY);
     if (!money) {
