@@ -284,12 +284,16 @@ export default function DashboardClient() {
             </>
           ) : (
             <>
+              {/* Transfer-heavy import with no subscriptions: lead with people paid */}
+              {transfers.length > 0 && <TransfersLedger transfers={transfers} />}
               <NoSubscriptionsNotice count={txnCount} />
               {summary && <SpendTimeline summary={summary} />}
             </>
           )}
 
-          {transfers.length > 0 && <TransfersLedger transfers={transfers} />}
+          {hasSubs && transfers.length > 0 && (
+            <TransfersLedger transfers={transfers} />
+          )}
 
           <TransactionsLedger transactions={txns} />
 

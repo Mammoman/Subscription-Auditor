@@ -3,12 +3,14 @@ import { buildSubscriptions } from "./engine/analyze";
 import { buildTransfers, isTransfer, TransferRecipient } from "./engine/transfers";
 import { normalizeMerchant } from "./engine/normalize";
 import { Subscription, Txn } from "./engine/types";
+import type { Direction } from "./parse-csv";
 
 export interface ImportRow {
   date: Date;
   merchantRaw: string;
   amount: number;
   category?: string;
+  direction?: Direction; // defaults to debit (money out)
 }
 
 export interface ImportResult {
@@ -16,9 +18,14 @@ export interface ImportResult {
   duplicates: number;
 }
 
-/** Dedup key: same day + normalized merchant + amount => the same charge. */
-function dedupeKey(date: Date, merchantNormalized: string, amount: number): string {
-  return `${date.toISOString().slice(0, 10)}|${merchantNormalized}|${amount}`;
+/** Dedup key: same day + merchant + amount + direction => the same entry. */
+function dedupeKey(
+  date: Date,
+  merchantNormalized: string,
+  amount: number,
+  direction: string
+): string {
+  return `${date.toISOString().slice(0, 10)}|${merchantNormalized}|${amount}|${direction}`;
 }
 
 /**
@@ -31,10 +38,12 @@ export async function importTransactions(
 ): Promise<ImportResult> {
   const existing = await prisma.transaction.findMany({
     where: { status: "active" },
-    select: { date: true, merchantNormalized: true, amount: true },
+    select: { date: true, merchantNormalized: true, amount: true, direction: true },
   });
   const seen = new Set(
-    existing.map((e) => dedupeKey(e.date, e.merchantNormalized, e.amount))
+    existing.map((e) =>
+      dedupeKey(e.date, e.merchantNormalized, e.amount, e.direction)
+    )
   );
 
   const toInsert: {
@@ -43,12 +52,14 @@ export async function importTransactions(
     merchantNormalized: string;
     amount: number;
     category?: string;
+    direction: string;
   }[] = [];
   let duplicates = 0;
 
   for (const r of rows) {
     const merchantNormalized = normalizeMerchant(r.merchantRaw);
-    const key = dedupeKey(r.date, merchantNormalized, r.amount);
+    const direction = r.direction ?? "debit";
+    const key = dedupeKey(r.date, merchantNormalized, r.amount, direction);
     if (seen.has(key)) {
       duplicates++;
       continue;
@@ -60,6 +71,7 @@ export async function importTransactions(
       merchantNormalized,
       amount: r.amount,
       category: r.category,
+      direction,
     });
   }
 
@@ -93,8 +105,10 @@ export interface Summary {
   upcoming: SummaryUpcoming[];
 }
 
-/** Load non-cancelled transactions from the DB as engine Txns. */
-async function loadActiveTxns(): Promise<Txn[]> {
+type ActiveRow = Txn & { direction: Direction };
+
+/** Load non-cancelled transactions from the DB, keeping their direction. */
+async function loadActiveRows(): Promise<ActiveRow[]> {
   const rows = await prisma.transaction.findMany({
     where: { status: "active" },
   });
@@ -104,7 +118,13 @@ async function loadActiveTxns(): Promise<Txn[]> {
     merchantRaw: r.merchantRaw,
     amount: r.amount,
     category: r.category ?? undefined,
+    direction: (r.direction === "credit" ? "credit" : "debit") as Direction,
   }));
+}
+
+/** Only outgoing (debit) transactions feed subscription & transfer detection. */
+function debitsOnly(rows: ActiveRow[]): Txn[] {
+  return rows.filter((r) => r.direction === "debit");
 }
 
 export interface TransactionRow {
@@ -114,12 +134,13 @@ export interface TransactionRow {
   amount: number;
   category: string | null;
   isTransfer: boolean;
+  direction: Direction;
 }
 
 /** Every imported transaction, newest first — the raw itemized ledger. */
 export async function getTransactions(): Promise<TransactionRow[]> {
-  const txns = await loadActiveTxns();
-  return txns
+  const rows = await loadActiveRows();
+  return rows
     .sort((a, b) => b.date.getTime() - a.date.getTime())
     .map((t) => ({
       id: t.id,
@@ -127,7 +148,8 @@ export async function getTransactions(): Promise<TransactionRow[]> {
       merchant: t.merchantRaw,
       amount: round2(t.amount),
       category: t.category ?? null,
-      isTransfer: isTransfer(t.merchantRaw),
+      isTransfer: t.direction === "debit" && isTransfer(t.merchantRaw),
+      direction: t.direction,
     }));
 }
 
@@ -144,18 +166,19 @@ function classify(txns: Txn[]): { charges: Txn[]; transfers: Txn[] } {
 export async function getSubscriptions(
   now: Date = new Date()
 ): Promise<Subscription[]> {
-  const { charges } = classify(await loadActiveTxns());
+  const { charges } = classify(debitsOnly(await loadActiveRows()));
   return buildSubscriptions(charges, now);
 }
 
 export async function getTransfers(): Promise<TransferRecipient[]> {
-  const { transfers } = classify(await loadActiveTxns());
+  const { transfers } = classify(debitsOnly(await loadActiveRows()));
   return buildTransfers(transfers);
 }
 
 export async function getSummary(now: Date = new Date()): Promise<Summary> {
-  const txns = await loadActiveTxns();
-  const { charges, transfers } = classify(txns);
+  const rows = await loadActiveRows();
+  const debits = debitsOnly(rows);
+  const { charges, transfers } = classify(debits);
   const subs = buildSubscriptions(charges, now);
   const recipients = buildTransfers(transfers);
 
@@ -170,9 +193,9 @@ export async function getSummary(now: Date = new Date()): Promise<Summary> {
   );
   const totalTransferred = transfers.reduce((sum, t) => sum + t.amount, 0);
 
-  // Spend timeline: sum of ALL transactions by calendar month.
+  // Spend timeline: money out (debits) by calendar month.
   const timelineMap = new Map<string, number>();
-  for (const t of txns) {
+  for (const t of debits) {
     const key = `${t.date.getFullYear()}-${String(
       t.date.getMonth() + 1
     ).padStart(2, "0")}`;
@@ -207,7 +230,7 @@ export async function getSummary(now: Date = new Date()): Promise<Summary> {
     monthlyTotal: round2(monthlyTotal),
     annualTotal: round2(monthlyTotal * 12),
     activeCount: activeSubs.length,
-    transactionCount: txns.length,
+    transactionCount: rows.length,
     zombieCount: zombies.length,
     zombieMonthlyWaste: round2(zombieMonthlyWaste),
     zombieAnnualWaste: round2(zombieMonthlyWaste * 12),

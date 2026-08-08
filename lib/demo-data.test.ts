@@ -8,17 +8,21 @@ import { Txn } from "./engine/types";
 // feature the product claims — otherwise the "Load demo data" experience is a lie.
 describe("demo data drives the full engine", () => {
   const now = new Date("2026-08-05");
-  const txns: Txn[] = generateDemoTransactions(now).map((t, i) => ({
-    id: String(i),
-    date: t.date,
-    merchantRaw: t.merchantRaw,
-    amount: t.amount,
-    category: t.category,
-  }));
+  const demo = generateDemoTransactions(now);
+  // Mirror the service: only debits (money out) feed detection.
+  const debits: Txn[] = demo
+    .filter((t) => (t.direction ?? "debit") === "debit")
+    .map((t, i) => ({
+      id: String(i),
+      date: t.date,
+      merchantRaw: t.merchantRaw,
+      amount: t.amount,
+      category: t.category,
+    }));
 
-  // Mirror the service: transfers are classified out of subscription detection.
-  const charges = txns.filter((t) => !isTransfer(t.merchantRaw));
-  const transfers = txns.filter((t) => isTransfer(t.merchantRaw));
+  // Transfers are classified out of subscription detection.
+  const charges = debits.filter((t) => !isTransfer(t.merchantRaw));
+  const transfers = debits.filter((t) => isTransfer(t.merchantRaw));
   const subs = buildSubscriptions(charges, now);
   const recipients = buildTransfers(transfers);
 

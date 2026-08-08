@@ -22,6 +22,7 @@ export interface TransactionDTO {
   amount: number;
   category: string | null;
   isTransfer: boolean;
+  direction: "debit" | "credit";
 }
 
 /** A transfer recipient as serialized over the API (Dates become ISO strings). */

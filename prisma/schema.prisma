@@ -14,6 +14,7 @@ model Transaction {
   merchantNormalized String
   amount             Float
   category           String?
+  direction          String   @default("debit") // debit (money out) | credit (money in)
   status             String   @default("active") // active | cancelled (local-only)
   createdAt          DateTime @default(now())
 

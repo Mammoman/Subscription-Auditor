@@ -1,9 +1,12 @@
 import Papa from "papaparse";
 
+export type Direction = "debit" | "credit";
+
 export interface ParsedRow {
   date: Date;
   merchantRaw: string;
-  amount: number; // normalized to a positive charge magnitude
+  amount: number; // positive magnitude
+  direction: Direction; // debit = money out, credit = money in
 }
 
 export interface SkippedRow {
@@ -103,18 +106,18 @@ export function parseCsv(text: string): ParseResult {
   const rows: ParsedRow[] = [];
   for (const v of valid) {
     if (v.amount === 0) {
-      skipped.push({ line: v.line, reason: "non-charge (zero amount)" });
+      skipped.push({ line: v.line, reason: "zero amount" });
       continue;
     }
-    const isCharge = Math.sign(v.amount) === chargeSign;
-    if (!isCharge) {
-      skipped.push({ line: v.line, reason: "non-charge (credit/refund)" });
-      continue;
-    }
+    // Debit = the dominant "charge" sign (money out); the opposite is a credit
+    // (money in) — kept, not skipped, so both can be shown and toggled.
+    const direction: Direction =
+      Math.sign(v.amount) === chargeSign ? "debit" : "credit";
     rows.push({
       date: v.date,
       merchantRaw: v.merchantRaw,
       amount: Math.abs(v.amount),
+      direction,
     });
   }
 

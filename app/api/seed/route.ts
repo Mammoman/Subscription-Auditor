@@ -16,6 +16,7 @@ export async function POST() {
       merchantNormalized: normalizeMerchant(t.merchantRaw),
       amount: t.amount,
       category: t.category,
+      direction: t.direction ?? "debit",
     })),
   });
 

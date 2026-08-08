@@ -122,10 +122,6 @@ export function parseStatementText(text: string): ParseResult {
     const txnToken = amounts.length >= 2 ? amounts[amounts.length - 2] : amounts[0];
     const money = parseMoney(txnToken);
 
-    if (money.isCredit) {
-      skipped.push({ line: index + 1, reason: "credit (not a charge)" });
-      return;
-    }
     if (!isFinite(money.value) || money.value <= 0) {
       skipped.push({ line: index + 1, reason: "unparseable amount" });
       return;
@@ -136,10 +132,12 @@ export function parseStatementText(text: string): ParseResult {
     for (const a of amounts) desc = desc.replace(a, " ");
     desc = desc.replace(/\b(CR|DR)\b/gi, " ").replace(/\s+/g, " ").trim();
 
+    // Credits (CR / parenthesized) are money in; everything else is money out.
     rows.push({
       date: dateHit.date,
       merchantRaw: desc || "Statement transaction",
       amount: money.value,
+      direction: money.isCredit ? "credit" : "debit",
     });
   });
 

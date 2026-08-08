@@ -1,15 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { motion } from "framer-motion";
 import clsx from "clsx";
 import { TransactionDTO } from "@/lib/client-types";
 import { useMoney } from "./CurrencyContext";
 
-function monthKey(iso: string): string {
-  return iso.slice(0, 7); // YYYY-MM
-}
+type Dir = "debit" | "credit";
 
+function monthKey(iso: string): string {
+  return iso.slice(0, 7);
+}
 function monthLabel(key: string): string {
   const [y, m] = key.split("-").map(Number);
   return new Date(y, m - 1, 1).toLocaleDateString("en-US", {
@@ -17,7 +17,6 @@ function monthLabel(key: string): string {
     year: "numeric",
   });
 }
-
 function monthShort(key: string): string {
   const [y, m] = key.split("-").map(Number);
   return new Date(y, m - 1, 1).toLocaleDateString("en-US", {
@@ -25,7 +24,6 @@ function monthShort(key: string): string {
     year: "2-digit",
   });
 }
-
 function rowDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", {
     weekday: "short",
@@ -39,35 +37,70 @@ export default function TransactionsLedger({
   transactions: TransactionDTO[];
 }) {
   const money = useMoney();
+  const [dir, setDir] = useState<Dir>("debit");
   const [selected, setSelected] = useState<string>("all");
 
-  const { months, groups } = useMemo(() => {
+  const counts = useMemo(
+    () => ({
+      debit: transactions.filter((t) => t.direction === "debit").length,
+      credit: transactions.filter((t) => t.direction === "credit").length,
+    }),
+    [transactions]
+  );
+
+  const { months, groups, filteredCount } = useMemo(() => {
+    const filtered = transactions.filter((t) => t.direction === dir);
     const g = new Map<string, TransactionDTO[]>();
-    for (const t of transactions) {
+    for (const t of filtered) {
       const k = monthKey(t.date);
-      const bucket = g.get(k);
-      if (bucket) bucket.push(t);
-      else g.set(k, [t]);
+      (g.get(k) ?? g.set(k, []).get(k)!).push(t);
     }
     const m = [...g.keys()].sort((a, b) => b.localeCompare(a));
-    return { months: m, groups: g };
-  }, [transactions]);
+    return { months: m, groups: g, filteredCount: filtered.length };
+  }, [transactions, dir]);
 
   if (transactions.length === 0) return null;
 
-  const visible = selected === "all" ? months : [selected];
+  const visible =
+    selected === "all" || !groups.has(selected) ? months : [selected];
 
   return (
     <section>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-fg/12 pb-3">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3 border-b border-fg/12 pb-3">
         <h2 className="eyebrow">All transactions</h2>
-        <span className="figures text-xs text-fg/45">{transactions.length} total</span>
+        {/* Money out / in toggle */}
+        <div className="flex overflow-hidden rounded-[3px] border border-fg/15">
+          {(
+            [
+              ["debit", "Money out", counts.debit],
+              ["credit", "Money in", counts.credit],
+            ] as [Dir, string, number][]
+          ).map(([key, label, n]) => (
+            <button
+              key={key}
+              onClick={() => {
+                setDir(key);
+                setSelected("all");
+              }}
+              className={clsx(
+                "figures border-l border-fg/15 px-3 py-1.5 text-[0.68rem] uppercase tracking-wide transition first:border-l-0",
+                dir === key
+                  ? key === "credit"
+                    ? "bg-green text-paper"
+                    : "bg-fg text-paper"
+                  : "text-fg/55 hover:bg-fg/8 hover:text-fg"
+              )}
+            >
+              {label} {n}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Month filter — select a month or view all */}
-      <div className="scrollbar-slim mb-4 flex gap-1 overflow-x-auto pb-1">
+      {/* Month filter */}
+      <div className="scrollbar-slim mb-3 flex gap-1 overflow-x-auto pb-1">
         <MonthChip
-          label={`All ${transactions.length}`}
+          label={`All ${filteredCount}`}
           active={selected === "all"}
           onClick={() => setSelected("all")}
         />
@@ -81,13 +114,14 @@ export default function TransactionsLedger({
         ))}
       </div>
 
-      <div className="space-y-6">
+      {/* Scrollable ledger — contained so it never pushes the page around */}
+      <div className="scrollbar-slim max-h-[65vh] space-y-6 overflow-y-auto rounded-[4px] border border-fg/10 bg-surface/40 p-4">
         {visible.map((k) => {
           const rows = groups.get(k) ?? [];
           const total = rows.reduce((s, t) => s + t.amount, 0);
           return (
             <div key={k}>
-              <div className="mb-2 flex items-baseline justify-between">
+              <div className="sticky top-0 -mx-4 mb-2 flex items-baseline justify-between border-b border-fg/10 bg-paper/90 px-4 py-1.5 backdrop-blur">
                 <h3 className="font-display text-sm font-semibold text-fg">
                   {monthLabel(k)}
                 </h3>
@@ -95,9 +129,9 @@ export default function TransactionsLedger({
                   {rows.length} · {money(total)}
                 </span>
               </div>
-              <div className="glass divide-y divide-fg/8">
-                {rows.map((t, i) => (
-                  <Row key={t.id} t={t} money={money} index={i} />
+              <div className="divide-y divide-fg/8">
+                {rows.map((t) => (
+                  <Row key={t.id} t={t} money={money} />
                 ))}
               </div>
             </div>
@@ -135,19 +169,13 @@ function MonthChip({
 function Row({
   t,
   money,
-  index,
 }: {
   t: TransactionDTO;
   money: (n: number, opts?: { cents?: boolean }) => string;
-  index: number;
 }) {
+  const credit = t.direction === "credit";
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ delay: Math.min(index * 0.008, 0.25) }}
-      className="flex items-center gap-3 px-4 py-2.5"
-    >
+    <div className="flex items-center gap-3 py-2.5">
       <span className="figures w-16 shrink-0 text-xs text-fg/45">
         {rowDate(t.date)}
       </span>
@@ -165,9 +193,15 @@ function Row({
           </span>
         )
       )}
-      <span className="figures w-24 shrink-0 text-right text-sm text-fg">
+      <span
+        className={clsx(
+          "figures w-28 shrink-0 text-right text-sm",
+          credit ? "text-green" : "text-fg"
+        )}
+      >
+        {credit ? "+" : "−"}
         {money(t.amount)}
       </span>
-    </motion.div>
+    </div>
   );
 }

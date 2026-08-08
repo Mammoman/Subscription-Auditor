@@ -5,6 +5,7 @@ export interface DemoTxn {
   merchantRaw: string;
   amount: number;
   category: string;
+  direction?: "debit" | "credit";
 }
 
 interface RecurringSpec {
@@ -145,6 +146,21 @@ export function generateDemoTransactions(now: Date = new Date()): DemoTxn[] {
       amount: tr.amount,
       category: "Transfer",
     });
+  }
+
+  // Monthly salary credits (money in) so the credit/debit toggle has data.
+  for (let m = 13; m >= 0; m--) {
+    const d = subMonths(now, m);
+    d.setDate(25);
+    if (d <= now) {
+      txns.push({
+        date: d,
+        merchantRaw: "SALARY PAYMENT ACME LTD",
+        amount: 850000,
+        category: "Income",
+        direction: "credit",
+      });
+    }
   }
 
   return txns.sort((a, b) => a.date.getTime() - b.date.getTime());

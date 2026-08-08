@@ -28,14 +28,16 @@ describe("parseStatementText", () => {
       "Opening Balance                                 1,000.00",
     ].join("\n");
 
-    const { rows, skipped } = parseStatementText(text);
+    const { rows } = parseStatementText(text);
 
-    expect(rows).toHaveLength(2);
-    expect(rows[0].merchantRaw).toContain("NETFLIX");
-    expect(rows[0].amount).toBeCloseTo(15.49); // the txn, not the 1,234.56 balance
-    expect(rows[1].amount).toBeCloseTo(10.99);
-    // the CR salary line is recognized but skipped as a credit
-    expect(skipped.some((s) => /credit/i.test(s.reason))).toBe(true);
+    // 2 debits + 1 credit (the CR salary) all kept, tagged by direction
+    expect(rows).toHaveLength(3);
+    const netflix = rows.find((r) => r.merchantRaw.includes("NETFLIX"));
+    expect(netflix?.amount).toBeCloseTo(15.49); // the txn, not the 1,234.56 balance
+    expect(netflix?.direction).toBe("debit");
+    const salary = rows.find((r) => r.merchantRaw.includes("SALARY"));
+    expect(salary?.direction).toBe("credit");
+    expect(salary?.amount).toBeCloseTo(250000);
   });
 
   it("handles single-amount lines and currency symbols", () => {
@@ -43,6 +45,7 @@ describe("parseStatementText", () => {
     const { rows } = parseStatementText(text);
     expect(rows).toHaveLength(1);
     expect(rows[0].amount).toBeCloseTo(24500);
+    expect(rows[0].direction).toBe("debit");
     expect(rows[0].merchantRaw).toContain("DSTV");
   });
 });
