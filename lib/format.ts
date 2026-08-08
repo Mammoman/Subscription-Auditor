@@ -19,7 +19,7 @@ export const CURRENCIES: Record<CurrencyCode, CurrencyMeta> = {
  * Stored transaction amounts are treated as this base currency; the selector
  * converts from here to the chosen display currency.
  */
-export const BASE_CURRENCY: CurrencyCode = "USD";
+export const BASE_CURRENCY: CurrencyCode = "NGN";
 
 export type Rates = Record<CurrencyCode, number>;
 

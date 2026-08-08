@@ -36,7 +36,7 @@ function isCurrencyCode(v: string | null): v is CurrencyCode {
 }
 
 export function CurrencyProvider({ children }: { children: React.ReactNode }) {
-  const [currency, setCurrencyState] = useState<CurrencyCode>("USD");
+  const [currency, setCurrencyState] = useState<CurrencyCode>("NGN");
   const [rates, setRates] = useState<Rates>(FALLBACK_RATES);
   const [ratesLive, setRatesLive] = useState(false);
 

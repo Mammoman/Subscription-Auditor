@@ -1,20 +1,17 @@
 "use client";
 
-import { CurrencyCode, CURRENCIES } from "@/lib/format";
+import { CurrencyCode, CURRENCIES, BASE_CURRENCY } from "@/lib/format";
 import { useCurrency } from "./CurrencyContext";
 
-const ORDER: CurrencyCode[] = ["USD", "NGN", "EUR", "GBP"];
+const ORDER: CurrencyCode[] = ["NGN", "USD", "EUR", "GBP"];
 
 export default function CurrencySelector() {
-  const { currency, setCurrency, rates, ratesLive } = useCurrency();
+  const { currency, setCurrency, ratesLive } = useCurrency();
 
-  const rate = rates[currency];
   const rateHint =
-    currency === "USD"
-      ? "Base currency"
-      : `1 USD = ${CURRENCIES[currency].symbol}${rate.toLocaleString(undefined, {
-          maximumFractionDigits: rate < 10 ? 2 : 0,
-        })} · ${ratesLive ? "live rate" : "offline rate"}`;
+    currency === BASE_CURRENCY
+      ? "Base currency (₦) — amounts as imported"
+      : `Converted from ₦ · ${ratesLive ? "live rate" : "offline rate"}`;
 
   return (
     <div
