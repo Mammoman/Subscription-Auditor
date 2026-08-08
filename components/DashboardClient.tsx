@@ -7,7 +7,6 @@ import {
   SubscriptionDTO,
   AccountSummaryDTO,
   TransactionDTO,
-  TransferRecipientDTO,
 } from "@/lib/client-types";
 import { useMoney } from "./CurrencyContext";
 import CurrencySelector from "./CurrencySelector";
@@ -19,7 +18,6 @@ import UpcomingRenewals from "./UpcomingRenewals";
 import SubscriptionList from "./SubscriptionList";
 import AccountsLedger from "./AccountsLedger";
 import TransactionsLedger from "./TransactionsLedger";
-import TransfersLedger from "./TransfersLedger";
 import ImportPanel from "./ImportPanel";
 import MonoConnectButton from "./MonoConnectButton";
 import ToastStack, { ToastMessage } from "./Toast";
@@ -33,7 +31,6 @@ export default function DashboardClient() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [subscriptions, setSubscriptions] = useState<SubscriptionDTO[]>([]);
   const [accounts, setAccounts] = useState<AccountSummaryDTO[]>([]);
-  const [transfers, setTransfers] = useState<TransferRecipientDTO[]>([]);
   const [txns, setTxns] = useState<TransactionDTO[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -52,14 +49,13 @@ export default function DashboardClient() {
 
   const refresh = useCallback(async () => {
     try {
-      const [sRes, subRes, acRes, txRes, trRes] = await Promise.all([
+      const [sRes, subRes, acRes, txRes] = await Promise.all([
         fetch("/api/summary", { cache: "no-store" }),
         fetch("/api/subscriptions", { cache: "no-store" }),
         fetch("/api/accounts", { cache: "no-store" }),
         fetch("/api/transactions", { cache: "no-store" }),
-        fetch("/api/transfers", { cache: "no-store" }),
       ]);
-      if (!sRes.ok || !subRes.ok || !acRes.ok || !txRes.ok || !trRes.ok)
+      if (!sRes.ok || !subRes.ok || !acRes.ok || !txRes.ok)
         throw new Error("fetch failed");
       const s: Summary = await sRes.json();
       const { subscriptions: subs }: { subscriptions: SubscriptionDTO[] } =
@@ -68,12 +64,9 @@ export default function DashboardClient() {
         await acRes.json();
       const { transactions: tx }: { transactions: TransactionDTO[] } =
         await txRes.json();
-      const { transfers: tr }: { transfers: TransferRecipientDTO[] } =
-        await trRes.json();
       setSummary(s);
       setSubscriptions(subs);
       setAccounts(acc);
-      setTransfers(tr);
       setTxns(tx);
     } catch {
       toast("Couldn't load data. Is the server running?", "danger");
@@ -332,9 +325,6 @@ export default function DashboardClient() {
                   onSelect={selectAccount}
                 />
               )}
-              {transfers.length > 0 && (
-                <TransfersLedger recipients={transfers} />
-              )}
               <NoSubscriptionsNotice count={txnCount} />
               {summary && <SpendTimeline summary={summary} />}
             </>
@@ -346,10 +336,6 @@ export default function DashboardClient() {
               selected={selectedAccount}
               onSelect={selectAccount}
             />
-          )}
-
-          {hasSubs && transfers.length > 0 && (
-            <TransfersLedger recipients={transfers} />
           )}
 
           <TransactionsLedger
