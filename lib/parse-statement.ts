@@ -6,8 +6,10 @@ import { ParsedRow, SkippedRow, ParseResult } from "./parse-csv";
  * Bank statements have no standard layout, so this is heuristic: for each line
  * we look for a leading date and one or more money amounts. When a line has two
  * or more amounts we treat the last as the running balance and the previous as
- * the transaction amount. Lines marked as credits (CR) are skipped. Amounts are
- * normalized to positive charge magnitudes, matching the CSV importer's output.
+ * the transaction amount. Lines marked as credits (CR) are kept with
+ * direction="credit"; all other amounts are treated as debits (money out).
+ * Amounts are normalized to positive magnitudes, matching the CSV importer's
+ * output.
  *
  * Limitations (surfaced to the user): amounts must show 2 decimals; ambiguous
  * DD/MM vs MM/DD dates are read day-first (international/Nigerian convention);

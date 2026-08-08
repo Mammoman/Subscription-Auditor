@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Summary,
   SubscriptionDTO,
   AccountSummaryDTO,
   TransactionDTO,
+  TransferRecipientDTO,
 } from "@/lib/client-types";
 import { useMoney } from "./CurrencyContext";
 import CurrencySelector from "./CurrencySelector";
@@ -18,9 +19,11 @@ import UpcomingRenewals from "./UpcomingRenewals";
 import SubscriptionList from "./SubscriptionList";
 import AccountsLedger from "./AccountsLedger";
 import TransactionsLedger from "./TransactionsLedger";
+import TransfersLedger from "./TransfersLedger";
 import ImportPanel from "./ImportPanel";
 import MonoConnectButton from "./MonoConnectButton";
 import ToastStack, { ToastMessage } from "./Toast";
+import PdfPasswordModal from "./PdfPasswordModal";
 
 // Mono bank-connect is dormant until a public key is configured.
 const MONO_ENABLED = Boolean(process.env.NEXT_PUBLIC_MONO_PUBLIC_KEY);
@@ -30,12 +33,16 @@ export default function DashboardClient() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [subscriptions, setSubscriptions] = useState<SubscriptionDTO[]>([]);
   const [accounts, setAccounts] = useState<AccountSummaryDTO[]>([]);
+  const [transfers, setTransfers] = useState<TransferRecipientDTO[]>([]);
   const [txns, setTxns] = useState<TransactionDTO[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [cancelingMerchant, setCancelingMerchant] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  // PDF password modal state
+  const [pwdMode, setPwdMode] = useState<"first" | "retry" | null>(null);
+  const pendingPdfFile = useRef<File | null>(null);
 
   const toast = useCallback((text: string, tone?: ToastMessage["tone"]) => {
     const id = Date.now() + Math.random();
@@ -45,13 +52,14 @@ export default function DashboardClient() {
 
   const refresh = useCallback(async () => {
     try {
-      const [sRes, subRes, acRes, txRes] = await Promise.all([
+      const [sRes, subRes, acRes, txRes, trRes] = await Promise.all([
         fetch("/api/summary", { cache: "no-store" }),
         fetch("/api/subscriptions", { cache: "no-store" }),
         fetch("/api/accounts", { cache: "no-store" }),
         fetch("/api/transactions", { cache: "no-store" }),
+        fetch("/api/transfers", { cache: "no-store" }),
       ]);
-      if (!sRes.ok || !subRes.ok || !acRes.ok || !txRes.ok)
+      if (!sRes.ok || !subRes.ok || !acRes.ok || !txRes.ok || !trRes.ok)
         throw new Error("fetch failed");
       const s: Summary = await sRes.json();
       const { subscriptions: subs }: { subscriptions: SubscriptionDTO[] } =
@@ -60,9 +68,12 @@ export default function DashboardClient() {
         await acRes.json();
       const { transactions: tx }: { transactions: TransactionDTO[] } =
         await txRes.json();
+      const { transfers: tr }: { transfers: TransferRecipientDTO[] } =
+        await trRes.json();
       setSummary(s);
       setSubscriptions(subs);
       setAccounts(acc);
+      setTransfers(tr);
       setTxns(tx);
     } catch {
       toast("Couldn't load data. Is the server running?", "danger");
@@ -148,6 +159,11 @@ export default function DashboardClient() {
     }
   }
 
+  /**
+   * Import a PDF bank statement. When the server signals the file needs a
+   * password (needsPassword), we open the modal instead of window.prompt().
+   * The modal calls this function again with the entered password.
+   */
   async function importPdf(file: File, password?: string) {
     setBusy("import");
     try {
@@ -159,30 +175,28 @@ export default function DashboardClient() {
 
       if (!res.ok) {
         if (data?.needsPassword) {
-          const entered = window.prompt(
-            password
-              ? "Incorrect password. Try again:"
-              : "This PDF is password-protected. Enter its password:"
-          );
-          if (entered) {
-            await importPdf(file, entered);
-            return;
-          }
+          // Show the password modal instead of window.prompt().
+          pendingPdfFile.current = file;
+          setPwdMode(password ? "retry" : "first");
+          setBusy(null);
+          return;
         }
         toast(data?.error || "PDF import failed — try a CSV export instead", "danger");
         return;
       }
 
-      const { imported, skipped, duplicates, format } = data;
-      const source =
-        format === "opay" ? "OPay" : format === "gtbank" ? "GTBank" : "PDF";
+      // Success — close the modal if it was open.
+      setPwdMode(null);
+      pendingPdfFile.current = null;
+
+      const { imported, skipped, duplicates } = data;
       if (imported === 0 && !duplicates) {
         toast("No transactions found in that PDF", "danger");
       } else if (imported === 0 && duplicates) {
         toast(`Already imported — ${duplicates} duplicates skipped`, "info");
       } else {
         toast(
-          `Imported ${imported} from ${source}${
+          `Imported ${imported} from PDF${
             duplicates ? `, ${duplicates} duplicates skipped` : ""
           }${skipped?.length ? `, ${skipped.length} unreadable` : ""}`,
           "success"
@@ -224,6 +238,20 @@ export default function DashboardClient() {
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <ToastStack toasts={toasts} />
+
+      {/* PDF password modal — replaces window.prompt() */}
+      <PdfPasswordModal
+        mode={pwdMode}
+        onSubmit={(pwd) => {
+          if (pendingPdfFile.current) importPdf(pendingPdfFile.current, pwd);
+        }}
+        onCancel={() => {
+          setPwdMode(null);
+          pendingPdfFile.current = null;
+          setBusy(null);
+          toast("PDF import cancelled", "info");
+        }}
+      />
 
       {/* Masthead — the top of a statement */}
       <header className="mb-8 border-b border-fg/15 pb-5">
@@ -304,6 +332,9 @@ export default function DashboardClient() {
                   onSelect={selectAccount}
                 />
               )}
+              {transfers.length > 0 && (
+                <TransfersLedger recipients={transfers} />
+              )}
               <NoSubscriptionsNotice count={txnCount} />
               {summary && <SpendTimeline summary={summary} />}
             </>
@@ -315,6 +346,10 @@ export default function DashboardClient() {
               selected={selectedAccount}
               onSelect={selectAccount}
             />
+          )}
+
+          {hasSubs && transfers.length > 0 && (
+            <TransfersLedger recipients={transfers} />
           )}
 
           <TransactionsLedger

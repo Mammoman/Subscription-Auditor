@@ -72,10 +72,15 @@ function titleCase(key: string): string {
  * Top-level engine entry point. Groups transactions by merchant, keeps only the
  * groups that form a recurring cadence, and derives a Subscription for each with
  * cost normalization, next-renewal projection, price hikes, and zombie scoring.
+ *
+ * @param currency ISO-4217 code (e.g. "NGN", "USD") to tag each subscription.
+ *   Defaults to empty string — the display layer (CurrencyContext) handles
+ *   symbol rendering independently of this field.
  */
 export function buildSubscriptions(
   txns: Txn[],
-  now: Date = new Date()
+  now: Date = new Date(),
+  currency = ""
 ): Subscription[] {
   const groups = groupByMerchant(txns);
   const subs: Subscription[] = [];
@@ -119,7 +124,7 @@ export function buildSubscriptions(
       cadence,
       confidence,
       avgAmount,
-      currency: "USD",
+      currency,
       category: sorted[sorted.length - 1].category ?? "Other",
       firstSeen,
       lastSeen,

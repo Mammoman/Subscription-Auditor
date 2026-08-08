@@ -55,11 +55,15 @@ interface Valid {
 /**
  * Parse a bank-export CSV (headers: date, description, amount; aliases tolerated).
  *
- * Handles both sign conventions automatically: some banks export purchases as
- * positive numbers, others as negative (debits). We detect the dominant sign
- * across the file and treat that side as charges, normalizing every charge to a
- * positive magnitude. Rows on the opposite side (refunds/credits/deposits),
- * zero amounts, and unparseable rows are collected in `skipped` with a reason.
+ * Handles three sign conventions automatically:
+ *  1. Single signed `amount` column, positives = charges (most common).
+ *  2. Single signed `amount` column, negatives = charges (some UK/EU banks).
+ *  3. Separate `debit` and `credit` columns — common in Nigerian bank exports
+ *     (GTBank, Access Bank, UBA). In this case direction is read directly from
+ *     whichever column has a non-zero value; the sign heuristic is skipped.
+ *
+ * Rows on the credit side (refunds/deposits), zero amounts, and unparseable
+ * rows are collected in `skipped` with a reason.
  */
 export function parseCsv(text: string): ParseResult {
   const parsed = Papa.parse<Record<string, string>>(text, {
@@ -67,15 +71,73 @@ export function parseCsv(text: string): ParseResult {
     skipEmptyLines: true,
   });
 
+  // ── two-column path ───────────────────────────────────────────────────────
+  // Detect whether the CSV has separate Debit and Credit columns. We check the
+  // header row, since either column may be empty on any given data row.
+  const headers = parsed.meta.fields ?? [];
+  const debitHeader = headers.find((h) =>
+    ["debit", "withdrawal", "dr"].includes(h.trim().toLowerCase())
+  );
+  const creditHeader = headers.find((h) =>
+    ["credit", "deposit", "cr"].includes(h.trim().toLowerCase())
+  );
+  const hasTwoColumns = Boolean(debitHeader && creditHeader);
+
+  if (hasTwoColumns) {
+    const rows: ParsedRow[] = [];
+    const skipped: SkippedRow[] = [];
+
+    parsed.data.forEach((raw, index) => {
+      const line = index + 2;
+
+      const dateStr = pick(raw, ["date", "transaction date", "posted date", "value date"]);
+      const merchant = pick(raw, ["description", "merchant", "name", "payee", "narration", "details", "particulars"]);
+
+      if (!dateStr || !merchant) {
+        skipped.push({ line, reason: "missing date or description" });
+        return;
+      }
+
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) {
+        skipped.push({ line, reason: `invalid date "${dateStr}"` });
+        return;
+      }
+
+      const debitRaw = debitHeader ? raw[debitHeader] : "";
+      const creditRaw = creditHeader ? raw[creditHeader] : "";
+      const debitAmt = parseAmount(debitRaw ?? "");
+      const creditAmt = parseAmount(creditRaw ?? "");
+
+      // A row must have exactly one non-null, non-zero amount.
+      const hasDebit = debitAmt !== null && debitAmt > 0;
+      const hasCredit = creditAmt !== null && creditAmt > 0;
+
+      if (!hasDebit && !hasCredit) {
+        skipped.push({ line, reason: "no debit or credit amount found" });
+        return;
+      }
+
+      const direction: Direction = hasDebit ? "debit" : "credit";
+      const amount = hasDebit ? debitAmt! : creditAmt!;
+
+      rows.push({ date, merchantRaw: merchant.trim(), amount, direction });
+    });
+
+    skipped.sort((a, b) => a.line - b.line);
+    return { rows, skipped };
+  }
+
+  // ── single-column path ────────────────────────────────────────────────────
   const valid: Valid[] = [];
   const skipped: SkippedRow[] = [];
 
   parsed.data.forEach((raw, index) => {
     const line = index + 2; // +1 header, +1 for 1-based
 
-    const dateStr = pick(raw, ["date", "transaction date", "posted date"]);
-    const merchant = pick(raw, ["description", "merchant", "name", "payee"]);
-    const amountStr = pick(raw, ["amount", "debit", "value"]);
+    const dateStr = pick(raw, ["date", "transaction date", "posted date", "value date"]);
+    const merchant = pick(raw, ["description", "merchant", "name", "payee", "narration", "details", "particulars"]);
+    const amountStr = pick(raw, ["amount", "value"]);
 
     if (!dateStr || !merchant || amountStr === undefined) {
       skipped.push({ line, reason: "missing date, description, or amount" });

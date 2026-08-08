@@ -74,11 +74,16 @@ export function recipientKey(name: string): string {
 /**
  * Aggregate every transfer transaction by recipient: how many times you sent
  * them money and how much in total. Sorted by total sent, descending.
+ *
+ * Caller responsibility: pass only transfer rows (pre-filtered with isTransfer).
+ * Non-transfer rows are silently skipped for safety but callers should not rely
+ * on this — classify() in service.ts is the canonical pre-filter.
  */
 export function buildTransfers(txns: Txn[]): TransferRecipient[] {
   const groups = new Map<string, { name: string; txns: Txn[] }>();
 
   for (const t of txns) {
+    // Safety guard — should already be filtered by caller.
     if (!isTransfer(t.merchantRaw)) continue;
     const name = extractRecipient(t.merchantRaw);
     const key = recipientKey(name);
@@ -123,11 +128,15 @@ export interface AccountSummary {
  * Aggregate every transfer by counterparty across BOTH directions: how much you
  * sent to and received from each account. Debits = money out to them, credits =
  * money in from them. Sorted by total two-way volume, descending.
+ *
+ * Caller responsibility: pass only transfer rows (pre-filtered with isTransfer).
+ * getAccounts() in service.ts is the canonical entry point and handles this.
  */
 export function buildAccounts(txns: DirectedTxn[]): AccountSummary[] {
   const groups = new Map<string, { name: string; txns: DirectedTxn[] }>();
 
   for (const t of txns) {
+    // Safety guard — callers should pre-filter, but we handle stragglers.
     if (!isTransfer(t.merchantRaw)) continue;
     const name = extractRecipient(t.merchantRaw);
     const key = recipientKey(name);
