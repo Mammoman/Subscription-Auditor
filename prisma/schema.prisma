@@ -7,8 +7,19 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  password     String // bcrypt hash
+  name         String?
+  createdAt    DateTime      @default(now())
+  transactions Transaction[]
+}
+
 model Transaction {
   id                 String   @id @default(cuid())
+  userId             String
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   date               DateTime
   merchantRaw        String
   merchantNormalized String
@@ -18,5 +29,6 @@ model Transaction {
   status             String   @default("active") // active | cancelled (local-only)
   createdAt          DateTime @default(now())
 
+  @@index([userId])
   @@index([merchantNormalized])
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { extractText, getDocumentProxy } from "unpdf";
 import { parseBankStatement } from "@/lib/parse-bank";
 import { importTransactions } from "@/lib/service";
+import { requireUserId } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -16,6 +17,7 @@ function isPasswordError(err: unknown): boolean {
 }
 
 export async function POST(req: NextRequest) {
+  const userId = await requireUserId();
   let form: FormData | null;
   try {
     form = await req.formData();
@@ -87,7 +89,7 @@ export async function POST(req: NextRequest) {
     console.warn("[import-pdf] Parsed 0 rows from", blob.name, "format:", format, "text length:", text.length);
   }
 
-  const { imported, duplicates } = await importTransactions(rows);
+  const { imported, duplicates } = await importTransactions(userId, rows);
 
   return NextResponse.json({ imported, duplicates, skipped, format });
 }

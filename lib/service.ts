@@ -41,10 +41,11 @@ function dedupeKey(
  * overlapping one) idempotent instead of double-counting.
  */
 export async function importTransactions(
+  userId: string,
   rows: ImportRow[]
 ): Promise<ImportResult> {
   const existing = await prisma.transaction.findMany({
-    where: { status: "active" },
+    where: { userId, status: "active" },
     select: { date: true, merchantNormalized: true, amount: true, direction: true },
   });
   const seen = new Set(
@@ -54,6 +55,7 @@ export async function importTransactions(
   );
 
   const toInsert: {
+    userId: string;
     date: Date;
     merchantRaw: string;
     merchantNormalized: string;
@@ -73,6 +75,7 @@ export async function importTransactions(
     }
     seen.add(key);
     toInsert.push({
+      userId,
       date: r.date,
       merchantRaw: r.merchantRaw,
       merchantNormalized,
@@ -128,10 +131,10 @@ function isInternalChurn(merchantRaw: string): boolean {
   return INTERNAL_CHURN.test(merchantRaw);
 }
 
-/** Load non-cancelled transactions from the DB, keeping their direction. */
-async function loadActiveRows(): Promise<ActiveRow[]> {
+/** Load a user's non-cancelled transactions from the DB, keeping direction. */
+async function loadActiveRows(userId: string): Promise<ActiveRow[]> {
   const rows = await prisma.transaction.findMany({
-    where: { status: "active" },
+    where: { userId, status: "active" },
   });
   return rows
     .map((r) => ({
@@ -162,8 +165,8 @@ export interface TransactionRow {
 }
 
 /** Every imported transaction, newest first — the raw itemized ledger. */
-export async function getTransactions(): Promise<TransactionRow[]> {
-  const rows = await loadActiveRows();
+export async function getTransactions(userId: string): Promise<TransactionRow[]> {
+  const rows = await loadActiveRows(userId);
   return rows
     .sort((a, b) => b.date.getTime() - a.date.getTime())
     .map((t) => {
@@ -182,8 +185,8 @@ export async function getTransactions(): Promise<TransactionRow[]> {
 }
 
 /** People/accounts you've moved money with — sent and received, both ways. */
-export async function getAccounts(): Promise<AccountSummary[]> {
-  const rows = await loadActiveRows();
+export async function getAccounts(userId: string): Promise<AccountSummary[]> {
+  const rows = await loadActiveRows(userId);
   return buildAccounts(rows.filter((r) => isTransfer(r.merchantRaw)));
 }
 
@@ -198,19 +201,23 @@ function classify(txns: Txn[]): { charges: Txn[]; transfers: Txn[] } {
 }
 
 export async function getSubscriptions(
+  userId: string,
   now: Date = new Date()
 ): Promise<Subscription[]> {
-  const { charges } = classify(debitsOnly(await loadActiveRows()));
+  const { charges } = classify(debitsOnly(await loadActiveRows(userId)));
   return buildSubscriptions(charges, now);
 }
 
-export async function getTransfers(): Promise<TransferRecipient[]> {
-  const { transfers } = classify(debitsOnly(await loadActiveRows()));
+export async function getTransfers(userId: string): Promise<TransferRecipient[]> {
+  const { transfers } = classify(debitsOnly(await loadActiveRows(userId)));
   return buildTransfers(transfers);
 }
 
-export async function getSummary(now: Date = new Date()): Promise<Summary> {
-  const rows = await loadActiveRows();
+export async function getSummary(
+  userId: string,
+  now: Date = new Date()
+): Promise<Summary> {
+  const rows = await loadActiveRows(userId);
   const debits = debitsOnly(rows);
   const { charges, transfers } = classify(debits);
   const subs = buildSubscriptions(charges, now);

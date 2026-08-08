@@ -26,7 +26,7 @@ import PdfPasswordModal from "./PdfPasswordModal";
 // Mono bank-connect is dormant until a public key is configured.
 const MONO_ENABLED = Boolean(process.env.NEXT_PUBLIC_MONO_PUBLIC_KEY);
 
-export default function DashboardClient() {
+export default function DashboardClient({ userEmail }: { userEmail: string }) {
   const money = useMoney();
   const [summary, setSummary] = useState<Summary | null>(null);
   const [subscriptions, setSubscriptions] = useState<SubscriptionDTO[]>([]);
@@ -101,6 +101,11 @@ export default function DashboardClient() {
       onError={(m) => toast(m, "danger")}
     />
   ) : null;
+
+  async function logout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    window.location.href = "/login";
+  }
 
   async function loadDemo() {
     setBusy("seed");
@@ -275,6 +280,16 @@ export default function DashboardClient() {
               </button>
             )}
           </div>
+        </div>
+        <div className="mt-3 flex items-center gap-3 text-xs text-fg/45">
+          <span className="figures truncate">{userEmail}</span>
+          <span className="text-fg/20">·</span>
+          <button
+            onClick={logout}
+            className="figures uppercase tracking-wide underline decoration-fg/25 underline-offset-4 transition hover:text-fg hover:decoration-fg"
+          >
+            Sign out
+          </button>
         </div>
         <p className="mt-3 max-w-xl text-sm text-fg/50">
           Every recurring charge, itemized — with the forgotten ones and the

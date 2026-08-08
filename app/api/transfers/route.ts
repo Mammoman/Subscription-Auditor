@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { getTransfers } from "@/lib/service";
+import { requireUserId } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function GET() {
-  const transfers = await getTransfers();
-  return NextResponse.json({ transfers });
+  const userId = await requireUserId();
+  return NextResponse.json({ transfers: await getTransfers(userId) });
 }

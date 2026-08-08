@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { normalizeMerchant } from "@/lib/engine/normalize";
+import { requireUserId } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 /**
- * Marks all transactions for a merchant as cancelled (local-only; does NOT
- * touch any real service). Cancelled merchants drop out of the active build.
+ * Marks all of the user's transactions for a merchant as cancelled (local-only;
+ * does NOT touch any real service). Cancelled merchants drop out of the build.
  */
 export async function POST(req: NextRequest) {
+  const userId = await requireUserId();
   const body = await req.json().catch(() => ({}));
   const merchant: string | undefined = body?.merchant;
   if (!merchant) {
@@ -16,7 +19,9 @@ export async function POST(req: NextRequest) {
   }
 
   const key = normalizeMerchant(merchant);
-  const all = await prisma.transaction.findMany({ where: { status: "active" } });
+  const all = await prisma.transaction.findMany({
+    where: { userId, status: "active" },
+  });
   const ids = all
     .filter((t) => normalizeMerchant(t.merchantRaw) === key)
     .map((t) => t.id);
