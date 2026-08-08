@@ -55,7 +55,7 @@ export default function PdfPasswordModal({
           className="font-display text-lg font-semibold text-fg"
         >
           {mode === "retry"
-            ? "Incorrect password — try again"
+            ? "Incorrect password, try again"
             : "This PDF is password-protected"}
         </h2>
         <p className="mt-1 text-sm text-fg/50">
