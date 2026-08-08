@@ -150,10 +150,10 @@ export function generateDemoTransactions(now: Date = new Date()): DemoTxn[] {
 
   // Incoming transfers (money received from people) — the other direction.
   const INCOMING: { merchantRaw: string; amount: number; monthsAgo: number; day: number }[] = [
-    { merchantRaw: "TRANSFER FROM JOHN DOE", amount: 200, monthsAgo: 8, day: 10 },
-    { merchantRaw: "NIP/GTB/JOHN DOE/REF7781", amount: 120, monthsAgo: 4, day: 17 },
-    { merchantRaw: "TRANSFER FROM AMAKA OKAFOR", amount: 75, monthsAgo: 6, day: 5 },
-    { merchantRaw: "TRANSFER FROM MUSA BELLO", amount: 300, monthsAgo: 2, day: 23 },
+    { merchantRaw: "TRANSFER FROM JOHN DOE", amount: 80000, monthsAgo: 8, day: 10 },
+    { merchantRaw: "NIP/GTB/JOHN DOE/REF7781", amount: 45000, monthsAgo: 4, day: 17 },
+    { merchantRaw: "TRANSFER FROM AMAKA OKAFOR", amount: 30000, monthsAgo: 6, day: 5 },
+    { merchantRaw: "TRANSFER FROM MUSA BELLO", amount: 150000, monthsAgo: 2, day: 23 },
   ];
   for (const inc of INCOMING) {
     const d = subMonths(now, inc.monthsAgo);
