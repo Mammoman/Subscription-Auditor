@@ -61,6 +61,12 @@ Always check the "imported / skipped" summary after a PDF import.
 | `detectPriceHikes` | find upward price changes between consecutive charges |
 | `scoreZombie` | score dormancy × cost into a 0–100 "forgotten?" signal |
 | `buildSubscriptions` | orchestrate the above into `Subscription` objects |
+| `isTransfer` / `extractRecipient` | detect person-to-person transfers and pull the recipient name |
+| `buildTransfers` | aggregate transfers by recipient — how often and how much you sent each person |
+
+Transfers are classified out of subscription detection: a statement's transfers
+are grouped by recipient into a "people you've paid" ledger, while merchant
+charges flow through the subscription pipeline.
 
 ## Deploying to Vercel + Vercel Postgres
 

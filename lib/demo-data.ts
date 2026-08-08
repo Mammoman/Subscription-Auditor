@@ -64,6 +64,27 @@ const ONE_OFFS: { merchantRaw: string; category: string; amount: number; monthsA
   { merchantRaw: "CVS/PHARMACY #04012", category: "Other", amount: 32.19, monthsAgo: 3, day: 16 },
 ];
 
+// Person-to-person transfers (recipients you've sent money to repeatedly).
+const TRANSFERS: {
+  merchantRaw: string;
+  amount: number;
+  monthsAgo: number;
+  day: number;
+}[] = [
+  { merchantRaw: "TRANSFER TO JOHN DOE", amount: 150, monthsAgo: 11, day: 4 },
+  { merchantRaw: "TRANSFER TO JOHN DOE", amount: 200, monthsAgo: 9, day: 12 },
+  { merchantRaw: "NIP/GTB/JOHN DOE/REF4471", amount: 120, monthsAgo: 7, day: 8 },
+  { merchantRaw: "TRANSFER TO JOHN DOE", amount: 300, monthsAgo: 5, day: 19 },
+  { merchantRaw: "TRF/JOHN DOE/LAG", amount: 90, monthsAgo: 3, day: 22 },
+  { merchantRaw: "TRANSFER TO JOHN DOE", amount: 175, monthsAgo: 1, day: 6 },
+  { merchantRaw: "NIP/UBA/AMAKA OKAFOR/REF9920", amount: 60, monthsAgo: 10, day: 2 },
+  { merchantRaw: "TRF/AMAKA OKAFOR/ABJ", amount: 80, monthsAgo: 6, day: 14 },
+  { merchantRaw: "TRANSFER TO AMAKA OKAFOR", amount: 45, monthsAgo: 2, day: 27 },
+  { merchantRaw: "TRANSFER TO MUSA BELLO", amount: 500, monthsAgo: 8, day: 9 },
+  { merchantRaw: "NIP/ACCESS/MUSA BELLO/REF1180", amount: 250, monthsAgo: 4, day: 16 },
+  { merchantRaw: "TRANSFER TO CHIDI EZE", amount: 40, monthsAgo: 3, day: 11 },
+];
+
 function subMonths(base: Date, months: number): Date {
   const d = new Date(base);
   d.setMonth(d.getMonth() - months);
@@ -111,6 +132,17 @@ export function generateDemoTransactions(now: Date = new Date()): DemoTxn[] {
       merchantRaw: o.merchantRaw,
       amount: o.amount,
       category: o.category,
+    });
+  }
+
+  for (const tr of TRANSFERS) {
+    const d = subMonths(now, tr.monthsAgo);
+    d.setDate(tr.day);
+    txns.push({
+      date: d,
+      merchantRaw: tr.merchantRaw,
+      amount: tr.amount,
+      category: "Transfer",
     });
   }
 

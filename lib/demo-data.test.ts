@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { generateDemoTransactions } from "./demo-data";
 import { buildSubscriptions } from "./engine/analyze";
+import { buildTransfers, isTransfer } from "./engine/transfers";
 import { Txn } from "./engine/types";
 
 // Engine acceptance test: the demo dataset must actually demonstrate every
@@ -14,7 +15,12 @@ describe("demo data drives the full engine", () => {
     amount: t.amount,
     category: t.category,
   }));
-  const subs = buildSubscriptions(txns, now);
+
+  // Mirror the service: transfers are classified out of subscription detection.
+  const charges = txns.filter((t) => !isTransfer(t.merchantRaw));
+  const transfers = txns.filter((t) => isTransfer(t.merchantRaw));
+  const subs = buildSubscriptions(charges, now);
+  const recipients = buildTransfers(transfers);
 
   it("detects at least 8 subscriptions", () => {
     expect(subs.length).toBeGreaterThanOrEqual(8);
@@ -33,5 +39,15 @@ describe("demo data drives the full engine", () => {
     expect(merchants).not.toContain("shell");
     expect(merchants).not.toContain("chipotle");
     expect(merchants).not.toContain("target");
+  });
+
+  it("aggregates transfers by recipient", () => {
+    expect(recipients.length).toBeGreaterThanOrEqual(3);
+    const john = recipients.find((r) => r.recipient === "John Doe");
+    expect(john).toBeTruthy();
+    expect(john!.count).toBeGreaterThanOrEqual(5); // sent to John many times
+    expect(john!.totalSent).toBeGreaterThan(0);
+    // transfers must never leak into subscriptions
+    expect(subs.map((s) => s.merchant.toLowerCase())).not.toContain("john doe");
   });
 });

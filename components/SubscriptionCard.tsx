@@ -12,10 +12,11 @@ interface Props {
   sub: SubscriptionDTO;
   onCancel: (sub: SubscriptionDTO) => void;
   canceling: boolean;
+  index?: number;
 }
 
 const SubscriptionCard = forwardRef<HTMLDivElement, Props>(function SubscriptionCard(
-  { sub, onCancel, canceling },
+  { sub, onCancel, canceling, index = 0 },
   ref
 ) {
   const money = useMoney();
@@ -25,10 +26,14 @@ const SubscriptionCard = forwardRef<HTMLDivElement, Props>(function Subscription
     <motion.div
       ref={ref}
       layout
-      initial={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.98 }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
+      transition={{
+        duration: 0.32,
+        ease: "easeOut",
+        delay: Math.min(index * 0.045, 0.6),
+      }}
       className={clsx(
         "glass glass-hover relative flex flex-col p-5",
         sub.isZombie && "border-l-2 border-l-red"

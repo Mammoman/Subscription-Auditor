@@ -70,10 +70,11 @@ export default function SubscriptionList({
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           <AnimatePresence mode="popLayout">
-            {filtered.map((sub) => (
+            {filtered.map((sub, i) => (
               <SubscriptionCard
                 key={sub.merchant}
                 sub={sub}
+                index={i}
                 onCancel={onCancel}
                 canceling={cancelingMerchant === sub.merchant}
               />

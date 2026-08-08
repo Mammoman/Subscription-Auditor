@@ -1,5 +1,6 @@
 import { prisma } from "./db";
 import { buildSubscriptions } from "./engine/analyze";
+import { buildTransfers, isTransfer, TransferRecipient } from "./engine/transfers";
 import { Subscription, Txn } from "./engine/types";
 
 export interface SummaryUpcoming {
@@ -18,6 +19,9 @@ export interface Summary {
   zombieMonthlyWaste: number;
   zombieAnnualWaste: number;
   priceHikeCount: number;
+  transferCount: number;
+  transferRecipientCount: number;
+  totalTransferred: number;
   timeline: { month: string; total: number }[];
   byCategory: { category: string; total: number }[];
   upcoming: SummaryUpcoming[];
@@ -37,16 +41,33 @@ async function loadActiveTxns(): Promise<Txn[]> {
   }));
 }
 
+/** Split transactions into person-to-person transfers and merchant charges. */
+function classify(txns: Txn[]): { charges: Txn[]; transfers: Txn[] } {
+  const charges: Txn[] = [];
+  const transfers: Txn[] = [];
+  for (const t of txns) {
+    (isTransfer(t.merchantRaw) ? transfers : charges).push(t);
+  }
+  return { charges, transfers };
+}
+
 export async function getSubscriptions(
   now: Date = new Date()
 ): Promise<Subscription[]> {
-  const txns = await loadActiveTxns();
-  return buildSubscriptions(txns, now);
+  const { charges } = classify(await loadActiveTxns());
+  return buildSubscriptions(charges, now);
+}
+
+export async function getTransfers(): Promise<TransferRecipient[]> {
+  const { transfers } = classify(await loadActiveTxns());
+  return buildTransfers(transfers);
 }
 
 export async function getSummary(now: Date = new Date()): Promise<Summary> {
   const txns = await loadActiveTxns();
-  const subs = buildSubscriptions(txns, now);
+  const { charges, transfers } = classify(txns);
+  const subs = buildSubscriptions(charges, now);
+  const recipients = buildTransfers(transfers);
 
   const activeSubs = subs;
   const zombies = subs.filter((s) => s.isZombie);
@@ -57,6 +78,7 @@ export async function getSummary(now: Date = new Date()): Promise<Summary> {
     (sum, s) => sum + s.priceHikes.length,
     0
   );
+  const totalTransferred = transfers.reduce((sum, t) => sum + t.amount, 0);
 
   // Spend timeline: sum of ALL transactions by calendar month.
   const timelineMap = new Map<string, number>();
@@ -100,6 +122,9 @@ export async function getSummary(now: Date = new Date()): Promise<Summary> {
     zombieMonthlyWaste: round2(zombieMonthlyWaste),
     zombieAnnualWaste: round2(zombieMonthlyWaste * 12),
     priceHikeCount,
+    transferCount: transfers.length,
+    transferRecipientCount: recipients.length,
+    totalTransferred: round2(totalTransferred),
     timeline,
     byCategory,
     upcoming,

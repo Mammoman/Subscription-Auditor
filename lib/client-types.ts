@@ -14,6 +14,16 @@ export interface PricePointDTO {
   amount: number;
 }
 
+/** A transfer recipient as serialized over the API (Dates become ISO strings). */
+export interface TransferRecipientDTO {
+  recipient: string;
+  count: number;
+  totalSent: number;
+  avgSent: number;
+  firstSent: string;
+  lastSent: string;
+}
+
 /** Subscription as serialized over the API (Dates become ISO strings). */
 export interface SubscriptionDTO {
   merchant: string;
