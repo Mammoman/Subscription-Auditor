@@ -12,16 +12,16 @@ export default function ThemeToggle() {
       onClick={toggle}
       title={isDark ? "Switch to light mode" : "Switch to dark mode"}
       aria-label="Toggle color theme"
-      className="glass glass-hover flex h-9 w-9 items-center justify-center rounded-xl text-fg/70 hover:text-fg"
+      className="figures flex h-8 w-8 items-center justify-center rounded-[3px] border border-fg/15 text-fg/60 transition hover:border-fg/40 hover:text-fg"
     >
       <motion.span
         key={theme}
-        initial={{ rotate: -90, opacity: 0, scale: 0.6 }}
-        animate={{ rotate: 0, opacity: 1, scale: 1 }}
+        initial={{ rotate: -90, opacity: 0 }}
+        animate={{ rotate: 0, opacity: 1 }}
         transition={{ duration: 0.25 }}
-        className="text-base"
+        className="text-sm leading-none"
       >
-        {isDark ? "☀️" : "🌙"}
+        {isDark ? "◐" : "◑"}
       </motion.span>
     </button>
   );

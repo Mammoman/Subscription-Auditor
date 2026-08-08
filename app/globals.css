@@ -2,32 +2,29 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ---- Theme tokens -------------------------------------------------------- */
-/* Light is the default (:root); .dark overrides. --fg is consumed by the
-   Tailwind `fg` color (rgb(var(--fg) / alpha)) so every neutral text/surface/
-   border adapts automatically. */
+/* ---- The Ledger: ink & paper theme tokens -------------------------------- */
+/* Dark is the default identity; light is a genuine paper. --fg drives the
+   Tailwind `fg` color so neutral text/surfaces/rules adapt automatically. */
 :root {
-  --fg: 17 24 39; /* slate-900-ish */
-  --page: 245 246 250;
-  --glass-bg: 255 255 255;
-  --glass-bg-alpha: 0.7;
-  --glass-border-alpha: 0.1;
-  --backdrop-opacity: 0.55;
-  --grad-a: #6d28d9;
-  --grad-b: #4f46e5;
-  --grad-c: #0891b2;
+  /* light = paper */
+  --paper: 234 227 210;
+  --surface: 243 236 221;
+  --surface-2: 228 219 199;
+  --fg: 34 28 20;
+  --red: 198 61 40;
+  --green: 47 122 84;
+  --amber: 158 112 40;
 }
 
 .dark {
-  --fg: 231 231 240; /* near-white */
-  --page: 7 7 12;
-  --glass-bg: 255 255 255;
-  --glass-bg-alpha: 0.04;
-  --glass-border-alpha: 0.08;
-  --backdrop-opacity: 1;
-  --grad-a: #c4b5fd;
-  --grad-b: #a5b4fc;
-  --grad-c: #67e8f9;
+  /* dark = ledger leather */
+  --paper: 22 19 14;
+  --surface: 30 26 19;
+  --surface-2: 38 33 24;
+  --fg: 241 234 216;
+  --red: 229 83 61;
+  --green: 90 161 122;
+  --amber: 214 162 74;
 }
 
 html,
@@ -38,65 +35,89 @@ body {
 }
 
 body {
-  background-color: rgb(var(--page));
+  background-color: rgb(var(--paper));
   color: rgb(var(--fg));
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Ambient gradient + grid backdrop */
-.app-backdrop::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -2;
-  opacity: var(--backdrop-opacity);
-  background:
-    radial-gradient(60% 50% at 15% 0%, rgba(139, 92, 246, 0.22), transparent 60%),
-    radial-gradient(50% 50% at 100% 10%, rgba(34, 211, 238, 0.14), transparent 55%),
-    radial-gradient(60% 60% at 50% 100%, rgba(99, 102, 241, 0.12), transparent 60%);
-}
-
-.app-backdrop::after {
+/* Faint ruled-ledger backdrop — barely-there horizontal lines like account paper. */
+body::before {
   content: "";
   position: fixed;
   inset: 0;
   z-index: -1;
-  background-image:
-    linear-gradient(rgb(var(--fg) / 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(var(--fg) / 0.03) 1px, transparent 1px);
-  background-size: 44px 44px;
-  mask-image: radial-gradient(circle at 50% 20%, black, transparent 80%);
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 31px,
+    rgb(var(--fg) / 0.035) 31px,
+    rgb(var(--fg) / 0.035) 32px
+  );
+  mask-image: linear-gradient(to bottom, transparent, black 8%, black 92%, transparent);
+}
+
+@layer base {
+  /* Tabular, monospaced figures everywhere numbers matter. */
+  .figures {
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
 }
 
 @layer components {
+  /* Ledger panel — a solid, hairline-bordered surface. No blur, no glow. */
   .glass {
-    background: rgb(var(--glass-bg) / var(--glass-bg-alpha));
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    border: 1px solid rgb(var(--fg) / var(--glass-border-alpha));
+    background: rgb(var(--surface));
+    border: 1px solid rgb(var(--fg) / 0.12);
+    border-radius: 4px;
   }
 
   .glass-hover {
-    transition: border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+    transition: border-color 0.18s ease, background-color 0.18s ease;
   }
-
   .glass-hover:hover {
-    border-color: rgb(var(--fg) / 0.18);
-    transform: translateY(-3px);
+    border-color: rgb(var(--fg) / 0.28);
+    background: rgb(var(--surface-2));
   }
 
+  /* Eyebrow: small-caps mono label, an auditor's section header. */
+  .eyebrow {
+    font-family: var(--font-mono), ui-monospace, monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-size: 0.66rem;
+    color: rgb(var(--fg) / 0.5);
+  }
+
+  /* Hairline rule, like a ruled line on a statement. */
+  .rule {
+    border: 0;
+    border-top: 1px solid rgb(var(--fg) / 0.14);
+  }
+
+  /* Stamp: the auditor's red flag, e.g. "STILL BILLING". */
+  .stamp {
+    font-family: var(--font-mono), ui-monospace, monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 0.62rem;
+    font-weight: 600;
+    color: rgb(var(--red));
+    border: 1px solid rgb(var(--red) / 0.45);
+    border-radius: 2px;
+    padding: 1px 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  /* Legacy alias kept harmless: wordmark is solid ink, not a gradient. */
   .text-gradient {
-    background: linear-gradient(
-      135deg,
-      var(--grad-a) 0%,
-      var(--grad-b) 40%,
-      var(--grad-c) 100%
-    );
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+    color: rgb(var(--fg));
   }
 }
 
@@ -105,6 +126,15 @@ body {
   height: 6px;
 }
 .scrollbar-slim::-webkit-scrollbar-thumb {
-  background: rgb(var(--fg) / 0.14);
+  background: rgb(var(--fg) / 0.16);
   border-radius: 9999px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
 }

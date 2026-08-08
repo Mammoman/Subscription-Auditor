@@ -42,10 +42,10 @@ export default function ImportPanel({
       }}
       onClick={() => inputRef.current?.click()}
       className={clsx(
-        "flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed p-4 text-center transition",
+        "flex cursor-pointer flex-col items-center justify-center rounded-[3px] border border-dashed p-4 text-center transition",
         dragging
-          ? "border-brand-violet bg-brand-violet/10"
-          : "border-fg/15 bg-fg/[0.02] hover:border-fg/30"
+          ? "border-fg/50 bg-fg/5"
+          : "border-fg/20 hover:border-fg/40"
       )}
     >
       <input

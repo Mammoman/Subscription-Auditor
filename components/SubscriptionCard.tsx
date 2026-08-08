@@ -25,35 +25,36 @@ const SubscriptionCard = forwardRef<HTMLDivElement, Props>(function Subscription
     <motion.div
       ref={ref}
       layout
-      initial={{ opacity: 0, y: 14 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.96 }}
-      transition={{ duration: 0.35, ease: "easeOut" }}
+      exit={{ opacity: 0, scale: 0.98 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
       className={clsx(
-        "glass glass-hover relative flex flex-col rounded-2xl p-5",
-        sub.isZombie && "shadow-glow-danger ring-1 ring-danger/30"
+        "glass glass-hover relative flex flex-col p-5",
+        sub.isZombie && "border-l-2 border-l-red"
       )}
     >
+      {/* Merchant + cadence */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="truncate text-lg font-semibold text-fg">
+          <h3 className="truncate font-display text-base font-semibold text-fg">
             {sub.merchant}
           </h3>
           <p className="text-xs text-fg/40">{sub.category}</p>
         </div>
-        <span className="shrink-0 rounded-full bg-fg/10 px-2.5 py-1 text-xs font-medium text-fg/70">
+        <span className="figures shrink-0 text-[0.62rem] uppercase tracking-eyebrow text-fg/45">
           {cadenceLabel(sub.cadence)}
         </span>
       </div>
 
+      {/* Amount line — the statement figure */}
       <div className="mt-4 flex items-end justify-between">
         <div>
-          <p className="text-2xl font-semibold tabular-nums text-fg">
+          <p className="figures text-2xl font-semibold tabular-nums text-fg">
             {money(sub.avgAmount)}
           </p>
-          <p className="text-xs text-fg/40">
-            {money(sub.monthlyCost)}/mo ·{" "}
-            {money(sub.annualCost, { cents: false })}/yr
+          <p className="figures mt-0.5 text-xs text-fg/40">
+            {money(sub.monthlyCost)}/mo · {money(sub.annualCost, { cents: false })}/yr
           </p>
         </div>
         <div className="text-right">
@@ -61,22 +62,27 @@ const SubscriptionCard = forwardRef<HTMLDivElement, Props>(function Subscription
         </div>
       </div>
 
-      {/* Flag row */}
-      <div className="mt-4 flex flex-wrap gap-2">
-        {sub.isZombie && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-danger/15 px-2.5 py-1 text-xs font-medium text-danger">
-            👻 Forgotten? · {sub.zombieScore}/100
-          </span>
-        )}
-        {topHike && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-warn/15 px-2.5 py-1 text-xs font-medium text-warn">
-            ▲ +{Math.round(topHike.pctChange)}% price hike
-          </span>
-        )}
-      </div>
+      {/* Flags — the auditor's marks */}
+      {(sub.isZombie || topHike) && (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {sub.isZombie && (
+            <span className="stamp">
+              <span className="h-1.5 w-1.5 rounded-full bg-red" />
+              Still billing
+            </span>
+          )}
+          {topHike && (
+            <span className="figures inline-flex items-center gap-1 rounded-[2px] border border-amber/45 px-1.5 py-[3px] text-[0.62rem] font-semibold uppercase tracking-wide text-amber">
+              ▲ +{Math.round(topHike.pctChange)}% · {money(topHike.fromAmount)}→
+              {money(topHike.toAmount)}
+            </span>
+          )}
+        </div>
+      )}
 
-      <div className="mt-4 flex items-center justify-between border-t border-fg/5 pt-3">
-        <p className="text-xs text-fg/40">
+      {/* Footer */}
+      <div className="mt-4 flex items-center justify-between border-t border-fg/10 pt-3">
+        <p className="text-xs text-fg/45">
           {sub.isZombie
             ? `Last charged ${relativeTime(sub.lastSeen)}`
             : `Renews ${relativeTime(sub.nextRenewal)}`}
@@ -84,7 +90,7 @@ const SubscriptionCard = forwardRef<HTMLDivElement, Props>(function Subscription
         <button
           onClick={() => onCancel(sub)}
           disabled={canceling}
-          className="rounded-lg border border-fg/10 bg-fg/5 px-3 py-1.5 text-xs font-medium text-fg/80 transition hover:border-danger/40 hover:bg-danger/10 hover:text-danger disabled:opacity-50"
+          className="figures text-xs font-medium uppercase tracking-wide text-fg/60 underline decoration-fg/25 underline-offset-4 transition hover:text-red hover:decoration-red disabled:opacity-50"
         >
           {canceling ? "Cancelling…" : "Cancel"}
         </button>

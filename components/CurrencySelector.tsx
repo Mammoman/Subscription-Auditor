@@ -18,7 +18,7 @@ export default function CurrencySelector() {
 
   return (
     <div
-      className="flex items-center gap-1 rounded-xl bg-fg/5 p-1"
+      className="flex items-center overflow-hidden rounded-[3px] border border-fg/15"
       title={rateHint}
     >
       {ORDER.map((code) => {
@@ -29,21 +29,20 @@ export default function CurrencySelector() {
             onClick={() => setCurrency(code)}
             title={CURRENCIES[code].label}
             className={
-              "flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition " +
+              "figures flex items-center gap-1 border-l border-fg/15 px-2.5 py-1.5 text-[0.68rem] uppercase tracking-wide transition first:border-l-0 " +
               (active
-                ? "bg-fg/15 text-fg"
-                : "text-fg/50 hover:text-fg/80")
+                ? "bg-fg text-paper"
+                : "text-fg/55 hover:bg-fg/8 hover:text-fg")
             }
           >
-            <span className="text-sm">{CURRENCIES[code].symbol}</span>
             <span>{code}</span>
           </button>
         );
       })}
       <span
         className={
-          "ml-1 mr-1 h-1.5 w-1.5 rounded-full " +
-          (ratesLive ? "bg-good" : "bg-fg/30")
+          "mx-1.5 h-1.5 w-1.5 rounded-full " +
+          (ratesLive ? "bg-green" : "bg-fg/30")
         }
         title={ratesLive ? "Live exchange rates" : "Offline exchange rates"}
       />

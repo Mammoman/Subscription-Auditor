@@ -8,7 +8,7 @@ import CurrencySelector from "./CurrencySelector";
 import ThemeToggle from "./ThemeToggle";
 import HeroSummary from "./HeroSummary";
 import SpendTimeline from "./SpendTimeline";
-import CategoryDonut from "./CategoryDonut";
+import CategoryLedger from "./CategoryLedger";
 import UpcomingRenewals from "./UpcomingRenewals";
 import SubscriptionList from "./SubscriptionList";
 import ImportPanel from "./ImportPanel";
@@ -193,41 +193,40 @@ export default function DashboardClient() {
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <ToastStack toasts={toasts} />
 
-      {/* Header */}
-      <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-fg/10 bg-fg/5 px-3 py-1 text-xs text-fg/60">
-            <span className="h-1.5 w-1.5 rounded-full bg-good" />
-            Kill your zombie subscriptions
+      {/* Masthead — the top of a statement */}
+      <header className="mb-8 border-b border-fg/15 pb-5">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="eyebrow mb-2">Statement of recurring charges</p>
+            <h1 className="font-display text-4xl font-bold tracking-tight text-fg sm:text-5xl">
+              Subscription Auditor<span className="text-red">.</span>
+            </h1>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-            <span className="text-gradient">Subscription Auditor</span>
-          </h1>
-          <p className="mt-1 text-sm text-fg/50">
-            Detect recurring charges, forgotten subscriptions, and sneaky price
-            hikes.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <ThemeToggle />
-          <CurrencySelector />
-          <button
-            onClick={loadDemo}
-            disabled={busy !== null}
-            className="rounded-xl bg-brand-grad px-4 py-2 text-sm font-semibold text-white shadow-glow transition hover:opacity-90 disabled:opacity-50"
-          >
-            {busy === "seed" ? "Loading…" : "Load demo data"}
-          </button>
-          {hasData && (
+          <div className="flex flex-wrap items-center gap-2">
+            <ThemeToggle />
+            <CurrencySelector />
             <button
-              onClick={clearData}
+              onClick={loadDemo}
               disabled={busy !== null}
-              className="rounded-xl border border-fg/10 bg-fg/5 px-4 py-2 text-sm font-medium text-fg/70 transition hover:bg-fg/10 disabled:opacity-50"
+              className="rounded-[3px] bg-fg px-4 py-2 text-sm font-medium text-paper transition hover:opacity-90 disabled:opacity-50"
             >
-              Clear
+              {busy === "seed" ? "Loading…" : "Load demo statement"}
             </button>
-          )}
+            {hasData && (
+              <button
+                onClick={clearData}
+                disabled={busy !== null}
+                className="rounded-[3px] border border-fg/20 px-4 py-2 text-sm font-medium text-fg/70 transition hover:border-fg/40 hover:text-fg disabled:opacity-50"
+              >
+                Clear
+              </button>
+            )}
+          </div>
         </div>
+        <p className="mt-3 max-w-xl text-sm text-fg/50">
+          Every recurring charge, itemized — with the forgotten ones and the
+          price hikes flagged in red.
+        </p>
       </header>
 
       {loading ? (
@@ -251,7 +250,7 @@ export default function DashboardClient() {
                   {summary && <SpendTimeline summary={summary} />}
                 </div>
                 <div className="lg:col-span-2">
-                  {summary && <CategoryDonut summary={summary} />}
+                  {summary && <CategoryLedger summary={summary} />}
                 </div>
               </div>
 
@@ -270,11 +269,9 @@ export default function DashboardClient() {
             </>
           )}
 
-          <div className="glass rounded-2xl p-5">
+          <div className="glass p-5">
             <div className="mb-3 flex items-center justify-between gap-3">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-fg/60">
-                Add your own data
-              </h2>
+              <h2 className="eyebrow">Append a statement</h2>
               {monoButton}
             </div>
             <ImportPanel
@@ -294,14 +291,14 @@ function NoSubscriptionsNotice({ count }: { count: number }) {
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="glass rounded-2xl p-6"
+      className="glass p-6"
     >
       <div className="flex items-start gap-4">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-grad text-xl shadow-glow">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[3px] border border-green/50 font-mono text-lg text-green">
           ✓
         </div>
         <div>
-          <h2 className="text-lg font-semibold text-fg">
+          <h2 className="font-display text-lg font-semibold text-fg">
             Imported {count} transaction{count === 1 ? "" : "s"} — but no
             recurring subscriptions yet
           </h2>
@@ -336,34 +333,31 @@ function EmptyState({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="glass mx-auto max-w-2xl rounded-3xl p-10 text-center"
+      className="glass mx-auto max-w-2xl p-8 sm:p-10"
     >
-      <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-grad text-3xl shadow-glow">
-        👻
-      </div>
-      <h2 className="text-2xl font-semibold text-fg">
-        Find your zombie subscriptions
+      <p className="eyebrow">No statement on file</p>
+      <h2 className="mt-3 font-display text-3xl font-bold tracking-tight text-fg">
+        Audit your subscriptions
       </h2>
-      <p className="mx-auto mt-2 max-w-md text-sm text-fg/50">
-        Load a realistic demo dataset to see the auditor detect recurring
-        charges, forgotten subscriptions, and price hikes — or upload your own
-        bank CSV.
+      <p className="mt-2 max-w-md text-sm text-fg/50">
+        Load a realistic demo statement to watch the auditor flag recurring
+        charges, forgotten subscriptions, and price hikes — or bring your own
+        bank statement (CSV or PDF).
       </p>
       <button
         onClick={onLoadDemo}
         disabled={busy !== null}
-        className="mt-6 rounded-xl bg-brand-grad px-6 py-3 text-sm font-semibold text-white shadow-glow transition hover:opacity-90 disabled:opacity-50"
+        className="mt-6 rounded-[3px] bg-fg px-6 py-3 text-sm font-medium text-paper transition hover:opacity-90 disabled:opacity-50"
       >
-        {busy === "seed" ? "Loading…" : "Load demo data"}
+        {busy === "seed" ? "Loading…" : "Load demo statement"}
       </button>
-      <div className="mt-6">
-        <ImportPanel
-          onImportCsv={onImportCsv}
-          onImportPdf={onImportPdf}
-          busy={busy === "import"}
-        />
-      </div>
-      {extra && <div className="mt-4 flex justify-center">{extra}</div>}
+      <hr className="rule my-7" />
+      <ImportPanel
+        onImportCsv={onImportCsv}
+        onImportPdf={onImportPdf}
+        busy={busy === "import"}
+      />
+      {extra && <div className="mt-4">{extra}</div>}
     </motion.div>
   );
 }
@@ -371,17 +365,10 @@ function EmptyState({
 function LoadingSkeleton() {
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div
-            key={i}
-            className="glass h-28 animate-pulse-soft rounded-2xl"
-          />
-        ))}
-      </div>
+      <div className="glass h-40 animate-pulse" />
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
-        <div className="glass h-72 animate-pulse-soft rounded-2xl lg:col-span-3" />
-        <div className="glass h-72 animate-pulse-soft rounded-2xl lg:col-span-2" />
+        <div className="glass h-72 animate-pulse lg:col-span-3" />
+        <div className="glass h-72 animate-pulse lg:col-span-2" />
       </div>
     </div>
   );

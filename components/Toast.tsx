@@ -20,10 +20,10 @@ export default function ToastStack({ toasts }: { toasts: ToastMessage[] }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, x: 40 }}
             className={clsx(
-              "glass pointer-events-auto max-w-xs rounded-xl px-4 py-3 text-sm shadow-glass",
-              t.tone === "success" && "border-good/30 text-good",
-              t.tone === "danger" && "border-danger/30 text-danger",
-              (!t.tone || t.tone === "info") && "text-fg/80"
+              "glass pointer-events-auto max-w-xs border-l-2 px-4 py-3 text-sm shadow-xl",
+              t.tone === "success" && "border-l-green text-green",
+              t.tone === "danger" && "border-l-red text-red",
+              (!t.tone || t.tone === "info") && "border-l-fg/40 text-fg/80"
             )}
           >
             {t.text}

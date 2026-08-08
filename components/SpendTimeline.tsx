@@ -22,51 +22,51 @@ export default function SpendTimeline({ summary }: { summary: Summary }) {
   }));
 
   return (
-    <div className="glass rounded-2xl p-5">
-      <div className="mb-4 flex items-baseline justify-between">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-fg/60">
-          Spend over time
-        </h2>
-        <span className="text-xs text-fg/40">all transactions / month</span>
+    <div className="glass h-full p-5">
+      <div className="mb-4 flex items-baseline justify-between border-b border-fg/12 pb-3">
+        <h2 className="eyebrow">Monthly spend</h2>
+        <span className="figures text-xs text-fg/40">all charges</span>
       </div>
       <div className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
             <defs>
               <linearGradient id="spendFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.5} />
-                <stop offset="100%" stopColor="#22d3ee" stopOpacity={0.02} />
+                <stop offset="0%" stopColor={c.ink} stopOpacity={0.2} />
+                <stop offset="100%" stopColor={c.ink} stopOpacity={0.01} />
               </linearGradient>
             </defs>
             <XAxis
               dataKey="month"
-              tick={{ fill: c.tick, fontSize: 11 }}
+              tick={{ fill: c.tick, fontSize: 10, fontFamily: c.mono }}
               axisLine={false}
               tickLine={false}
               minTickGap={16}
             />
             <YAxis
-              tick={{ fill: c.tick, fontSize: 11 }}
+              tick={{ fill: c.tick, fontSize: 10, fontFamily: c.mono }}
               axisLine={false}
               tickLine={false}
-              width={48}
+              width={52}
               tickFormatter={(v) => money(v, { cents: false })}
             />
             <Tooltip
-              cursor={{ stroke: c.cursor }}
+              cursor={{ stroke: c.cursor, strokeDasharray: "3 3" }}
               contentStyle={{
                 background: c.tooltipBg,
                 border: `1px solid ${c.tooltipBorder}`,
-                borderRadius: 12,
+                borderRadius: 3,
                 color: c.tooltipText,
+                fontFamily: c.mono,
+                fontSize: 12,
               }}
               formatter={(v: number) => [money(v), "Spend"]}
             />
             <Area
               type="monotone"
               dataKey="total"
-              stroke="#a78bfa"
-              strokeWidth={2}
+              stroke={c.ink}
+              strokeWidth={1.5}
               fill="url(#spendFill)"
             />
           </AreaChart>

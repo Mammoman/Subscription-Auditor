@@ -75,10 +75,13 @@ export function useChartColors() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   return {
-    tick: isDark ? "rgba(231,231,240,0.45)" : "rgba(17,24,39,0.5)",
-    cursor: isDark ? "rgba(255,255,255,0.15)" : "rgba(17,24,39,0.15)",
-    tooltipBg: isDark ? "rgba(12,12,20,0.92)" : "rgba(255,255,255,0.97)",
-    tooltipBorder: isDark ? "rgba(255,255,255,0.1)" : "rgba(17,24,39,0.12)",
-    tooltipText: isDark ? "#ffffff" : "#111827",
+    ink: isDark ? "#F1EAD8" : "#221C14",
+    tick: isDark ? "rgba(241,234,216,0.45)" : "rgba(34,28,20,0.5)",
+    fillTop: isDark ? "rgba(241,234,216,0.18)" : "rgba(34,28,20,0.14)",
+    cursor: isDark ? "rgba(241,234,216,0.18)" : "rgba(34,28,20,0.18)",
+    tooltipBg: isDark ? "#1E1A13" : "#F3ECDD",
+    tooltipBorder: isDark ? "rgba(241,234,216,0.16)" : "rgba(34,28,20,0.16)",
+    tooltipText: isDark ? "#F1EAD8" : "#221C14",
+    mono: "var(--font-mono), ui-monospace, monospace",
   };
 }

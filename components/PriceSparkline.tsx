@@ -47,8 +47,9 @@ export default function PriceSparkline({
             y1={prev.y}
             x2={p.x}
             y2={p.y}
-            stroke={rose ? "#fb7185" : "#67e8f9"}
-            strokeWidth={rose ? 2.5 : 1.75}
+            stroke={rose ? "#e5533d" : "currentColor"}
+            strokeOpacity={rose ? 1 : 0.55}
+            strokeWidth={rose ? 2 : 1.25}
             strokeLinecap="round"
           />
         );
@@ -58,8 +59,9 @@ export default function PriceSparkline({
           key={i}
           cx={p.x}
           cy={p.y}
-          r={i === points.length - 1 ? 2.5 : 1.5}
-          fill={i === points.length - 1 ? "#8b5cf6" : "currentColor"}
+          r={i === points.length - 1 ? 2 : 1.25}
+          fill="currentColor"
+          fillOpacity={i === points.length - 1 ? 0.9 : 0.5}
         />
       ))}
     </svg>

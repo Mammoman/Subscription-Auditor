@@ -18,12 +18,10 @@ export default function UpcomingRenewals({ summary }: { summary: Summary }) {
   const items = summary.upcoming;
 
   return (
-    <div className="glass rounded-2xl p-5">
-      <div className="mb-4 flex items-baseline justify-between">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-fg/60">
-          Upcoming renewals
-        </h2>
-        <span className="text-xs text-fg/40">next 45 days</span>
+    <div className="glass p-5">
+      <div className="mb-2 flex items-baseline justify-between border-b border-fg/12 pb-3">
+        <h2 className="eyebrow">Upcoming charges</h2>
+        <span className="figures text-xs text-fg/40">next 45 days</span>
       </div>
 
       {items.length === 0 ? (
@@ -31,42 +29,42 @@ export default function UpcomingRenewals({ summary }: { summary: Summary }) {
           Nothing renewing in the next 45 days.
         </p>
       ) : (
-        <div className="scrollbar-slim flex gap-3 overflow-x-auto pb-2">
+        <ul>
           {items.map((item, i) => {
             const days = daysUntil(item.date);
             const urgent = days <= 7;
             return (
-              <motion.div
+              <motion.li
                 key={item.merchant + item.date}
-                initial={{ opacity: 0, x: 12 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.05 }}
-                className="glass-hover min-w-[150px] shrink-0 rounded-xl border border-fg/5 bg-fg/[0.03] p-4"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: i * 0.03 }}
+                className="flex items-center gap-3 border-b border-fg/8 py-2.5 last:border-0"
               >
-                <div
+                <span className="figures w-24 shrink-0 text-xs text-fg/45">
+                  {formatDate(item.date)}
+                </span>
+                <span className="min-w-0 flex-1 truncate text-sm text-fg">
+                  {item.merchant}
+                  <span className="ml-2 text-xs text-fg/35">
+                    {cadenceLabel(item.cadence)}
+                  </span>
+                </span>
+                <span
                   className={clsx(
-                    "inline-flex rounded-full px-2 py-0.5 text-xs font-medium",
-                    urgent
-                      ? "bg-danger/20 text-danger"
-                      : "bg-fg/10 text-fg/60"
+                    "figures shrink-0 text-[0.62rem] uppercase tracking-wide",
+                    urgent ? "text-red" : "text-fg/40"
                   )}
                 >
                   {days === 0 ? "today" : `in ${days}d`}
-                </div>
-                <p className="mt-3 truncate font-medium text-fg">
-                  {item.merchant}
-                </p>
-                <p className="text-xs text-fg/40">
-                  {cadenceLabel(item.cadence)}
-                </p>
-                <p className="mt-2 text-lg font-semibold tabular-nums text-fg">
+                </span>
+                <span className="figures w-20 shrink-0 text-right text-sm font-medium text-fg">
                   {money(item.amount)}
-                </p>
-                <p className="text-xs text-fg/40">{formatDate(item.date)}</p>
-              </motion.div>
+                </span>
+              </motion.li>
             );
           })}
-        </div>
+        </ul>
       )}
     </div>
   );
