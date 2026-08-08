@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { extractText, getDocumentProxy } from "unpdf";
-import { parseStatementText } from "@/lib/parse-statement";
+import { parseBankStatement } from "@/lib/parse-bank";
 import { importTransactions } from "@/lib/service";
 
 export const dynamic = "force-dynamic";
@@ -59,8 +59,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { rows, skipped } = parseStatementText(text);
+  const { rows, skipped, format } = parseBankStatement(text);
   const { imported, duplicates } = await importTransactions(rows);
 
-  return NextResponse.json({ imported, duplicates, skipped });
+  return NextResponse.json({ imported, duplicates, skipped, format });
 }

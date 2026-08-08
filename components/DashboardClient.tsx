@@ -173,14 +173,16 @@ export default function DashboardClient() {
         return;
       }
 
-      const { imported, skipped, duplicates } = data;
+      const { imported, skipped, duplicates, format } = data;
+      const source =
+        format === "opay" ? "OPay" : format === "gtbank" ? "GTBank" : "PDF";
       if (imported === 0 && !duplicates) {
         toast("No transactions found in that PDF", "danger");
       } else if (imported === 0 && duplicates) {
         toast(`Already imported — ${duplicates} duplicates skipped`, "info");
       } else {
         toast(
-          `Imported ${imported} from PDF${
+          `Imported ${imported} from ${source}${
             duplicates ? `, ${duplicates} duplicates skipped` : ""
           }${skipped?.length ? `, ${skipped.length} unreadable` : ""}`,
           "success"
